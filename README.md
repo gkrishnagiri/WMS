@@ -1,17 +1,19 @@
 # Enterprise Operations Suite (EOS)
 
 Enterprise Operations Suite is the demo application for the AI-Native AMS
-Research Platform. Phase 1 establishes the reusable backend and frontend
-foundation; business workflows are intentionally deferred.
+Research Platform. Phase 1 established the reusable backend and frontend
+foundation, and Prompt 02 adds the first business domain foundation.
 
 ## Current phase
 
-Phase 1 — Enterprise Foundation.
+Prompt 02 — Warehouse & Fulfillment Operations.
 
-The foundation includes a FastAPI API, React/MUI application shell, request
+The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
-checks, and an empty Alembic baseline. The first business module,
-Warehouse & Fulfillment Operations, is planned for a later phase.
+checks, and the Warehouse & Fulfillment domain model. The domain is
+read-focused: allocation, picking confirmation, inventory adjustments,
+shipment rating, carrier integrations, agents, incidents, and advanced
+workflows remain deferred.
 
 ## Infrastructure status
 
@@ -42,9 +44,28 @@ cp .env.example .env       # optional; defaults are local-development safe
 ./start_backend.sh
 ```
 
-The API is available at `http://localhost:8000`. Useful endpoints are `/`,
-`/health`, and `/version`. The health endpoint returns HTTP 503 when
+The API is available at http://localhost:8050. Useful endpoints are /,
+/health, /version, and the Warehouse & Fulfillment API under
+/api/v1/warehouse. The health endpoint returns HTTP 503 when
 PostgreSQL or Redis is unavailable.
+
+Warehouse API endpoints:
+
+- GET /api/v1/warehouse/summary
+- GET /api/v1/warehouse/warehouses
+- GET /api/v1/warehouse/warehouses/{warehouse_id}
+- GET /api/v1/warehouse/items
+- GET /api/v1/warehouse/inventory
+- GET /api/v1/warehouse/orders
+- GET /api/v1/warehouse/tasks
+- GET /api/v1/warehouse/shipments
+
+After applying the Alembic migrations, load deterministic demo data with:
+
+    cd backend
+    source .venv/bin/activate
+    alembic upgrade head
+    python -m app.db.seed_warehouse
 
 Supported backend variables are documented in `backend/.env.example`,
 including `APP_*`, `BACKEND_CORS_ORIGINS`, `DATABASE_*`, `REDIS_*`,
@@ -58,8 +79,18 @@ cp .env.example .env       # optional
 ./start_frontend.sh
 ```
 
-The frontend is served at `http://localhost:4001`. Its API URL and branding
+The frontend is served at http://localhost:4001. Its API URL and branding
 variables are documented in `frontend/.env.example`.
+
+Warehouse frontend routes:
+
+- /warehouse
+- /warehouse/inventory
+- /warehouse/orders
+- /warehouse/tasks
+- /warehouse/shipments
+
+The existing /, /health, and /about routes remain available.
 
 ## Validation
 
@@ -68,6 +99,8 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+alembic upgrade head
+python -m app.db.seed_warehouse
 pytest
 
 cd ../frontend

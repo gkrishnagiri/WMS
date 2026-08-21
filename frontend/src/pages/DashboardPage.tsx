@@ -13,7 +13,7 @@ export function DashboardPage() {
           <Card><CardContent><Chip label="Phase 1" color="primary" size="small" /><Typography variant="h6" sx={{ mt: 2 }}>Enterprise Foundation</Typography><Typography color="text.secondary">Core application shell, service health, and platform configuration.</Typography></CardContent></Card>
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card><CardContent><Chip label="Planned" variant="outlined" size="small" /><Typography variant="h6" sx={{ mt: 2 }}>Warehouse & Fulfillment</Typography><Typography color="text.secondary">The first business module will arrive in a later phase.</Typography></CardContent></Card>
+          <Card><CardContent><Chip label="Live" color="success" size="small" /><Typography variant="h6" sx={{ mt: 2 }}>Warehouse & Fulfillment</Typography><Typography color="text.secondary">Operational warehouse, inventory, orders, tasks, and shipment views are available.</Typography></CardContent></Card>
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <Card><CardContent><Chip label="Connected" color="success" size="small" /><Typography variant="h6" sx={{ mt: 2 }}>Platform Services</Typography><Typography color="text.secondary">PostgreSQL and Redis are available through the local infrastructure baseline.</Typography></CardContent></Card>

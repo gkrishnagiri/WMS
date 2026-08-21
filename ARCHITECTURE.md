@@ -1,4 +1,4 @@
-# EOS Foundation Architecture
+# EOS Architecture
 
 ## Current architecture
 
@@ -16,17 +16,32 @@ configuration managed by `pydantic-settings`.
 
 ## Backend modules
 
-`app/core` contains configuration, JSON-style logging, request IDs, and
-exception handlers. `app/db` contains the declarative base and session
-management. `app/services` contains the Redis manager. `app/telemetry` is a
-safe placeholder for later instrumentation. Alembic currently contains an
-empty baseline migration; no business tables exist.
+app/core contains configuration, JSON-style logging, request IDs, and
+exception handlers. app/db contains the declarative base, session
+management, and the idempotent Warehouse & Fulfillment demo seed. The
+app/models/warehouse.py, app/schemas/warehouse.py,
+app/services/warehouse_service.py, and app/api/routes/warehouse.py modules
+contain the first business domain. Alembic revision
+0002_warehouse_fulfillment creates the domain tables.
 
 ## Frontend modules
 
-The shared shell provides the top bar, sidebar, and content area. The current
-pages are the dashboard placeholder, dependency health view, and About page.
-Business navigation and workflows are intentionally not implemented.
+The shared shell provides the top bar, sidebar, and content area. Warehouse
+pages use typed API functions and TanStack Query for summary, inventory,
+orders, fulfillment tasks, and shipment data. Material UI cards, tables, and
+chips provide the operational views without a charting dependency.
+
+## Warehouse domain
+
+The warehouse domain uses the following PostgreSQL tables, all prefixed with
+wf_: wf_warehouses, wf_zones, wf_locations, wf_items,
+wf_inventory_balances, wf_orders, wf_order_lines, wf_fulfillment_tasks, and
+wf_shipments.
+
+The read-focused API is mounted at /api/v1/warehouse and exposes summary,
+warehouse, item, inventory, order, fulfillment task, and shipment views.
+Inventory availability is calculated as on-hand minus allocated quantity;
+low stock is calculated against the item's reorder point.
 
 ## Infrastructure baseline
 
@@ -37,10 +52,12 @@ Those files are not part of the Phase 1 application changes.
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,
-business models, warehouse workflows, inventory, orders, shipping, batch
-processing, incident simulation, and agentic AMS behaviors are deferred.
+allocation, picking confirmation, inventory adjustment approval, shipment
+rating, carrier integrations, batch processing, incident simulation, and
+agentic AMS behaviors are deferred.
 
 ## Next phase
 
-Build the Warehouse & Fulfillment Operations module on top of this foundation,
-including its domain models, APIs, UI workflows, and test coverage.
+Extend the read-focused warehouse foundation with carefully scoped business
+transactions and workflows in a later prompt. Agents, AI behavior, ticket
+simulation, and incident management remain out of scope for this phase.

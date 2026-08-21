@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   AppBar,
   Box,
@@ -26,9 +26,14 @@ const theme = createTheme({
 });
 
 const navigation = [
-  { label: "Overview", path: "/" },
-  { label: "System Health", path: "/health" },
-  { label: "About EOS", path: "/about" },
+  { label: "Dashboard", path: "/" },
+  { label: "Warehouse", path: "/warehouse" },
+  { label: "Inventory", path: "/warehouse/inventory" },
+  { label: "Orders", path: "/warehouse/orders" },
+  { label: "Fulfillment Tasks", path: "/warehouse/tasks" },
+  { label: "Shipments", path: "/warehouse/shipments" },
+  { label: "Health", path: "/health" },
+  { label: "About", path: "/about" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -61,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <List sx={{ px: 1.5, py: 1 }}>
           {navigation.map((item) => (
             <ListItem key={item.path} disablePadding>
-              <ListItemButton component={NavLink} to={item.path} sx={{ borderRadius: 2, mb: 0.5 }}>
+              <ListItemButton component={Link} to={item.path} sx={{ borderRadius: 2, mb: 0.5 }}>
                 <ListItemText primary={item.label} />
               </ListItemButton>
             </ListItem>

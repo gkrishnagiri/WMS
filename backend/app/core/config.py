@@ -23,8 +23,8 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     app_env: str = Field(default="development", validation_alias="APP_ENV")
     app_host: str = "0.0.0.0"
-    app_port: int = 8000
-    backend_cors_origins: str = "http://localhost:3000,http://localhost:5173"
+    app_port: int = 8050
+    backend_cors_origins: str = "http://localhost:4001,http://127.0.0.1:4001"
 
     database_host: str = "localhost"
     database_port: int = 15432

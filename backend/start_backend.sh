@@ -11,8 +11,8 @@ fi
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 
-echo "EOS backend: http://localhost:${APP_PORT:-8000}"
+echo "EOS backend: http://localhost:${APP_PORT:-8050}"
 exec uvicorn app.main:app \
   --host "${APP_HOST:-0.0.0.0}" \
-  --port "${APP_PORT:-8000}" \
+  --port "${APP_PORT:-8050}" \
   --reload
