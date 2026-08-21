@@ -1,57 +1,79 @@
-# Warehouse Fulfillment Management System
+# Enterprise Operations Suite (EOS)
 
-A synthetic enterprise Warehouse Fulfillment Management System used as a
-production-like laboratory for Application Management Services incident
-resolution and future agentic support experiments.
+Enterprise Operations Suite is the demo application for the AI-Native AMS
+Research Platform. Phase 1 establishes the reusable backend and frontend
+foundation; business workflows are intentionally deferred.
 
-## Project Status
+## Current phase
 
-Environment bootstrap phase.
+Phase 1 — Enterprise Foundation.
 
-## Goals
+The foundation includes a FastAPI API, React/MUI application shell, request
+IDs, structured logging, configuration, PostgreSQL and Redis connectivity
+checks, and an empty Alembic baseline. The first business module,
+Warehouse & Fulfillment Operations, is planned for a later phase.
 
-- Simulate frontend business users
-- Simulate backend transactional processing
-- Simulate asynchronous workers and queues
-- Simulate scheduled and data-processing batches
-- Simulate downstream integrations
-- Provide realistic application, infrastructure, and business telemetry
-- Inject realistic technical, functional, data, and performance failures
-- Generate incidents from monitoring alerts and synthetic users
-- Provide a controlled environment for testing autonomous incident diagnosis
-  and remediation
+## Infrastructure status
 
-## Current Environment
+The existing Phase 0 baseline remains the source of truth and is unchanged:
 
-The initial development environment runs on an Azure Ubuntu VM.
+- PostgreSQL on host port `15432`
+- Redis on host port `6379`
+- OpenTelemetry Collector, Prometheus, Loki, and Grafana
+- Existing `docker-compose.yml`, `observability/`, `docs/`, `data/`, and
+  `load-tests/`
 
-The application and supporting services will be containerized so the
-environment can be reproduced consistently.
+Tempo and application tracing are deferred.
 
-## Architecture
+## Repository structure
 
-The initial target architecture will include:
+```text
+backend/       FastAPI application, SQLAlchemy, Alembic, and pytest tests
+frontend/      React, TypeScript, Vite, React Router, TanStack Query, MUI
+observability/ Phase 0 observability configuration (unchanged)
+docs/          Phase 0 and project documentation (unchanged)
+```
 
-- React frontend
-- FastAPI backend
-- PostgreSQL
-- Redis
-- Background workers
-- Batch processing
-- Mock downstream services
-- OpenTelemetry
-- Prometheus
-- Loki
-- Tempo
-- Grafana
-- Alertmanager
-- Synthetic load testing
-- Scenario and fault-injection engine
-- Incident/ticket simulator
+## Backend setup
 
-## Development Principle
+```bash
+cd backend
+cp .env.example .env       # optional; defaults are local-development safe
+./start_backend.sh
+```
 
-The simulated production environment must expose realistic evidence through
-tickets, logs, metrics, traces, application state, business data, and service
-dependencies so that future support agents can investigate incidents rather
-than rely on hard-coded solutions.
+The API is available at `http://localhost:8000`. Useful endpoints are `/`,
+`/health`, and `/version`. The health endpoint returns HTTP 503 when
+PostgreSQL or Redis is unavailable.
+
+Supported backend variables are documented in `backend/.env.example`,
+including `APP_*`, `BACKEND_CORS_ORIGINS`, `DATABASE_*`, `REDIS_*`,
+`LOG_LEVEL`, and `REQUEST_ID_HEADER`.
+
+## Frontend setup
+
+```bash
+cd frontend
+cp .env.example .env       # optional
+./start_frontend.sh
+```
+
+The frontend is served at `http://localhost:4001`. Its API URL and branding
+variables are documented in `frontend/.env.example`.
+
+## Validation
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pytest
+
+cd ../frontend
+npm install
+npm run build
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the current foundation boundaries
+and deferred work.
