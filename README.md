@@ -5,11 +5,11 @@ Research Platform. Phase 1 established the reusable backend and frontend
 foundation. Prompts 04 through 06 added deterministic supportability sources,
 and Prompt 07 added application-level observability evidence for support
 diagnosis. Prompt 08 adds deterministic batch operations and failure support
-flows.
+flows. Prompt 09 adds a governed deterministic support engineer copilot.
 
 ## Current phase
 
-Prompt 08 — Batch Jobs and Batch Failure Scenarios.
+Prompt 09 — AI-Native Support Engineer Copilot Foundation.
 
 The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
@@ -32,6 +32,9 @@ evidence-backed diagnostic cases without external observability export.
 Prompt 08 adds five batch job definitions, ordered steps, synchronous run
 history, failure scenarios, and deterministic links to exceptions, AMS tickets,
 and diagnostic cases.
+Prompt 09 adds copilot sessions, context snapshots, deterministic
+recommendations, human-approved action plans, safe-action catalog data, and
+reviewable work-note, customer-update, and investigation-checklist drafts.
 
 ## Infrastructure status
 
@@ -218,6 +221,8 @@ alembic upgrade head
 python -m app.db.seed_warehouse
 python -m app.db.seed_synthetic_users
 python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+python -m app.db.seed_copilot
 pytest
 
 cd ../frontend
@@ -432,3 +437,66 @@ npm run build
 The backend remains on port `8050` and the frontend remains on port `4001`.
 Real scheduling, async batch workers, retry orchestration, external file
 transfer, and AI-native support agents remain deferred.
+
+## Prompt 09 governed support copilot
+
+The `copilot_sessions`, `copilot_context_snapshots`,
+`copilot_recommendations`, `copilot_action_plans`, `copilot_messages`,
+`copilot_safe_actions`, and `copilot_action_events` tables provide a governed
+support workbench across existing EOS artifacts:
+
+```text
+Ticket/exception/alert/triage/diagnostic/batch/user report
+    → deterministic context snapshot
+    → recommendations and human-review action plan
+    → work-note, customer-update, or checklist draft
+```
+
+The context builder aggregates currently available ticket, exception, user
+report, monitoring, observability, and batch data without secrets or external
+calls. Recommendation generation is rules-based and repeatable. Accepting or
+dismissing a recommendation records an audit event only; it does not resolve a
+ticket, close an alert, rerun a batch, change warehouse data, or perform any
+other underlying action.
+
+Seed the safe-action catalog idempotently with:
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.db.seed_copilot
+```
+
+Copilot APIs include summary, safe actions, session list/create/detail,
+context building, recommendation generation and review, action-plan
+generation, deterministic draft generation, session closure, and the
+convenience `POST /api/v1/copilot/analyze` flow.
+
+Copilot frontend routes:
+
+- `/copilot`
+- `/copilot/sessions`
+- `/copilot/sessions/:sessionId`
+- `/copilot/analyze`
+
+## Prompt 09 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+python -m app.db.seed_copilot
+pytest
+
+cd ../frontend
+npm run build
+```
+
+The backend remains on port `8050` and the frontend remains on port `4001`.
+External LLMs, OpenAI/Anthropic SDKs, LangGraph, LiteLLM, RAG, embeddings,
+vector stores, autonomous remediation, notification sending, and ServiceNow
+integration are explicitly deferred.

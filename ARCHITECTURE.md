@@ -34,6 +34,9 @@ Revision `0007_observability_diagnosis` adds traces, spans, structured logs,
 metric samples, diagnostic cases, and diagnostic evidence.
 Revision `0008_batch_jobs` adds batch jobs, ordered job steps, run history,
 step runs, and batch run events.
+Revision `0009_copilot_foundation` adds governed copilot sessions, context
+snapshots, recommendations, action plans, message drafts, safe actions, and
+copilot action events.
 
 The operations module is organized in `app/models/operations.py`,
 `app/schemas/operations.py`, `app/services/operations_exception_service.py`,
@@ -120,6 +123,30 @@ the existing deterministic observability service and add evidence for the
 run, failed steps, and failure events. The batch module does not schedule
 work or provide retries, queue workers, file transfer, or autonomous
 remediation.
+
+The support copilot module is organized in `app/models/copilot.py`,
+`app/schemas/copilot.py`, `app/services/copilot_service.py`,
+`app/api/routes/copilot.py`, and `app/db/seed_copilot.py`. It is a deterministic
+context and recommendation layer over existing support artifacts. A session
+can target an AMS ticket, operational exception, user report, monitoring
+alert or triage case, observability diagnostic, batch run, or a manual
+investigation. Context snapshots persist sanitized summaries and related
+entity references; recommendations and action plans retain their evidence and
+human-approval requirements.
+
+Copilot support flow:
+
+```text
+Existing support artifact → Context snapshot → Rules-based recommendations
+                           → Human-review action plan → Draft support messages
+```
+
+The copilot records recommendation acceptance/dismissal and draft creation in
+`copilot_action_events`. These are audit records, not an execution engine.
+The copilot does not automatically acknowledge, resolve, suppress, close, or
+rerun anything, and it does not change warehouse business data. The analyze
+endpoint is a deterministic convenience flow that creates a session,
+snapshot, recommendations, action plan, and investigation checklist.
 
 ## Warehouse domain
 
@@ -213,4 +240,4 @@ execution, or autonomous diagnosis is performed by this module.
 The next phase can extend the controlled workflow with additional warehouse
 operations and supportability data. Real scheduling, retry orchestration,
 external batch integrations, AI classification, ticket analytics, agentic
-behavior, and autonomous resolution remain out of scope for Prompt 08.
+behavior, and autonomous resolution remain out of scope for Prompt 09.

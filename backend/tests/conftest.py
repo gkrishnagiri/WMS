@@ -15,6 +15,8 @@ from app.models.warehouse import FulfillmentTask, InventoryBalance, Item, Locati
 from app.models.synthetic_users import SyntheticJourney, SyntheticUser
 from app.models.monitoring import MonAlertRule, MonComponent
 from app.models.batch import BatchJob, BatchJobStep
+from app.models.copilot import CopilotSafeAction
+from app.db.seed_copilot import SAFE_ACTIONS
 
 
 class _UnavailableDatabase:
@@ -126,6 +128,7 @@ async def warehouse_client(client: AsyncClient):
         session.add(job)
         session.flush()
         session.add_all([BatchJobStep(job_id=job.id, step_code=step_code, step_name=step_code.replace("_", " "), step_order=index, step_type="PROCESS", description=step_code, enabled=True, expected_duration_ms=1000) for index, step_code in enumerate(step_codes, 1)])
+    session.add_all([CopilotSafeAction(action_code=code, name=name, description=description, target_module=module, action_type=action_type, risk_level=risk, requires_human_approval=True, enabled=True) for code, name, description, module, action_type, risk in SAFE_ACTIONS])
     session.commit()
 
     def override_get_db():

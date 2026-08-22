@@ -11,6 +11,7 @@ import { NewUserReportPage, UserReportDetailPage, UserReportsPage } from "./page
 import { DiagnosticDetailPage, DiagnosticsPage, LogsPage, MetricsPage, ObservabilityOverviewPage, ObservabilitySimulationsPage, TraceDetailPage, TracesPage } from "./pages/ObservabilityPages";
 import { BatchJobDetailPage, BatchJobsPage, BatchRunDetailPage, BatchRunsPage, BatchSimulationsPage } from "./pages/BatchPages";
 import { MonitoringAlertsPage, MonitoringSimulationsPage, MonitoringTriageDetailPage, MonitoringTriagePage } from "./pages/MonitoringPages";
+import { CopilotAnalyzePage, CopilotOverviewPage, CopilotSessionDetailPage, CopilotSessionsPage } from "./pages/CopilotPages";
 
 export default function App() {
   return (
@@ -53,6 +54,10 @@ export default function App() {
         <Route path="/batch/runs" element={<BatchRunsPage />} />
         <Route path="/batch/runs/:runId" element={<BatchRunDetailPage />} />
         <Route path="/batch/simulations" element={<BatchSimulationsPage />} />
+        <Route path="/copilot" element={<CopilotOverviewPage />} />
+        <Route path="/copilot/sessions" element={<CopilotSessionsPage />} />
+        <Route path="/copilot/sessions/:sessionId" element={<CopilotSessionDetailPage />} />
+        <Route path="/copilot/analyze" element={<CopilotAnalyzePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
