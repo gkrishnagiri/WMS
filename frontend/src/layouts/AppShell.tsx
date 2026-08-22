@@ -44,6 +44,9 @@ const navigation = [
   { label: "Observability", path: "/observability" },
   { label: "Traces", path: "/observability/traces" },
   { label: "Diagnostics", path: "/observability/diagnostics" },
+  { label: "Batch Jobs", path: "/batch/jobs" },
+  { label: "Batch Runs", path: "/batch/runs" },
+  { label: "Batch Simulations", path: "/batch/simulations" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];

@@ -32,6 +32,8 @@ Revision `0006_monitoring_alert_noise` adds monitored components, alert rules,
 alerts, alert events, manual triage cases, and triage-case alert links.
 Revision `0007_observability_diagnosis` adds traces, spans, structured logs,
 metric samples, diagnostic cases, and diagnostic evidence.
+Revision `0008_batch_jobs` adds batch jobs, ordered job steps, run history,
+step runs, and batch run events.
 
 The operations module is organized in `app/models/operations.py`,
 `app/schemas/operations.py`, `app/services/operations_exception_service.py`,
@@ -97,6 +99,27 @@ traces, span timelines, structured logs, and metric samples in PostgreSQL.
 These records can reference monitoring alerts, manual triage cases, business
 entities, and AMS tickets without exporting to an external observability
 platform.
+
+The batch operations module is organized in `app/models/batch.py`,
+`app/schemas/batch.py`, `app/services/batch_service.py`,
+`app/api/routes/batch.py`, and `app/db/seed_batch.py`. It models five
+deterministic batch jobs and twenty-one ordered steps. Batch simulations run
+synchronously, persist every step and lifecycle event, and finish as
+`SUCCESS`, `FAILED`, `TIMEOUT`, or `PARTIAL_SUCCESS`.
+
+Batch support flow:
+
+```text
+Batch run failure → BATCH_OPERATIONS exception → BATCH AMS ticket
+                  → Optional observability diagnostic evidence
+```
+
+Batch tickets use source `BATCH` and source module `BATCH_OPERATIONS`; active
+duplicate tickets for the same run are prevented. Batch diagnostic cases use
+the existing deterministic observability service and add evidence for the
+run, failed steps, and failure events. The batch module does not schedule
+work or provide retries, queue workers, file transfer, or autonomous
+remediation.
 
 ## Warehouse domain
 
@@ -175,10 +198,11 @@ Those files are not part of the Phase 1 application changes.
 
 Application traces and Tempo, metrics instrumentation, background workers,
 returns, replenishment, wave planning, inventory adjustment approval,
-shipment rating, carrier integrations, batch processing, external ITSM
-connectors, notifications, ticket analytics, anomaly detection, root-cause
+shipment rating, carrier integrations, real scheduling, async batch workers,
+batch retry orchestration, external file transfer, external ITSM connectors,
+notifications, ticket analytics, anomaly detection, root-cause
 inference, real OpenTelemetry export, Tempo, Loki, Prometheus scraping,
-Grafana dashboards, batch failures, LLM summaries, agent orchestration, AI-
+Grafana dashboards, LLM summaries, agent orchestration, AI-
 native diagnosis, and autonomous remediation are deferred. Synthetic journey
 runs, monitoring alerts, and simulated observability evidence are stored for
 audit, but no browser automation, external observability export, batch
@@ -187,6 +211,6 @@ execution, or autonomous diagnosis is performed by this module.
 ## Next phase
 
 The next phase can extend the controlled workflow with additional warehouse
-operations and supportability data. Real observability integrations, batch
-failures, AI classification, ticket analytics, agentic behavior, and
-autonomous resolution remain out of scope for Prompt 07.
+operations and supportability data. Real scheduling, retry orchestration,
+external batch integrations, AI classification, ticket analytics, agentic
+behavior, and autonomous resolution remain out of scope for Prompt 08.

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.ams import AmsTicket, AmsTicketEvent
+from app.models.batch import BatchRun
 from app.models.monitoring import MonAlert, MonAlertEvent, MonTriageCase, MonTriageCaseAlert
 from app.models.observability import ObsDiagnosticCase, ObsTrace
 from app.models.operations import OpsException
@@ -289,6 +290,42 @@ def create_ticket_from_diagnostic(db: Session, case_id: UUID, commit: bool = Tru
     _event(db, ticket, "TICKET_CREATED", f"Ticket created from diagnostic case {diagnostic.diagnostic_number}.", to_status="NEW", payload={"diagnostic_case_id": str(diagnostic.id)})
     if commit:
         db.commit()
+    return get_ticket(db, ticket.id)
+
+
+def create_ticket_from_batch_run(db: Session, run_id: UUID) -> TicketResponse:
+    run = db.get(BatchRun, run_id)
+    if run is None:
+        raise AmsError("Batch run not found.", 404)
+    if run.linked_ticket_id:
+        existing = db.get(AmsTicket, run.linked_ticket_id)
+        if existing is not None and existing.status not in ("CLOSED", "CANCELLED"):
+            return get_ticket(db, existing.id)
+    if run.status == "SUCCESS":
+        raise AmsError("Successful batch runs cannot create support tickets.", 409)
+    severity = "HIGH" if run.status in ("FAILED", "TIMEOUT") else "MEDIUM"
+    priority = "P2" if run.status in ("FAILED", "TIMEOUT") else "P3"
+    now = _now()
+    description = (
+        f"Batch job: {run.job.name} ({run.job.job_code})\nRun: {run.run_number}\n"
+        f"Failed step: {next((step.step_code for step in run.step_runs if step.status in ('FAILED', 'TIMEOUT', 'PARTIAL_SUCCESS')), 'not available')}\n"
+        f"Failure type: {run.failure_type or 'UNKNOWN'}\nFailure message: {run.failure_message or run.summary}\n"
+        f"Records processed/succeeded/failed: {run.records_processed}/{run.records_succeeded}/{run.records_failed}"
+    )[:2000]
+    ticket = AmsTicket(
+        ticket_number=_next_number(db, "INCIDENT"), ticket_type="INCIDENT", severity=severity, priority=priority, status="NEW",
+        source="BATCH", source_module="BATCH_OPERATIONS", affected_entity_type="BATCH_RUN", affected_entity_id=run.id,
+        short_description=f"{run.job.job_code} {run.run_number}: batch support issue"[:200], description=description,
+        assignment_group="AMS-WAREHOUSE-SUPPORT", business_service="Warehouse & Fulfillment Operations", application_name="Enterprise Operations Suite",
+        environment=get_settings().app_env, opened_at=now, created_at=now, updated_at=now,
+    )
+    db.add(ticket)
+    db.flush()
+    run.linked_ticket_id, run.updated_at = ticket.id, now
+    _event(db, ticket, "TICKET_CREATED", f"Ticket created from batch run {run.run_number}.", to_status="NEW", payload={"batch_run_id": str(run.id)})
+    from app.models.batch import BatchRunEvent
+    db.add(BatchRunEvent(batch_run_id=run.id, event_type="BATCH_TICKET_CREATED", message=f"AMS ticket {ticket.ticket_number} created.", event_payload={"ticket_id": str(ticket.id)}, created_by="system", created_at=now))
+    db.commit()
     return get_ticket(db, ticket.id)
 
 

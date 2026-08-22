@@ -9,6 +9,7 @@ import { AmsTicketDetailPage, AmsTicketsPage, OperationsExceptionsPage, Operatio
 import { JourneyRunsPage, SyntheticJourneysPage } from "./pages/SyntheticUserPages";
 import { NewUserReportPage, UserReportDetailPage, UserReportsPage } from "./pages/UserReportPages";
 import { DiagnosticDetailPage, DiagnosticsPage, LogsPage, MetricsPage, ObservabilityOverviewPage, ObservabilitySimulationsPage, TraceDetailPage, TracesPage } from "./pages/ObservabilityPages";
+import { BatchJobDetailPage, BatchJobsPage, BatchRunDetailPage, BatchRunsPage, BatchSimulationsPage } from "./pages/BatchPages";
 import { MonitoringAlertsPage, MonitoringSimulationsPage, MonitoringTriageDetailPage, MonitoringTriagePage } from "./pages/MonitoringPages";
 
 export default function App() {
@@ -47,6 +48,11 @@ export default function App() {
         <Route path="/observability/metrics" element={<MetricsPage />} />
         <Route path="/observability/diagnostics" element={<DiagnosticsPage />} />
         <Route path="/observability/diagnostics/:caseId" element={<DiagnosticDetailPage />} />
+        <Route path="/batch/jobs" element={<BatchJobsPage />} />
+        <Route path="/batch/jobs/:jobId" element={<BatchJobDetailPage />} />
+        <Route path="/batch/runs" element={<BatchRunsPage />} />
+        <Route path="/batch/runs/:runId" element={<BatchRunDetailPage />} />
+        <Route path="/batch/simulations" element={<BatchSimulationsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

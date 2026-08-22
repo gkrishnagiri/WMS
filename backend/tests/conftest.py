@@ -14,6 +14,7 @@ from app.core.config import Settings
 from app.models.warehouse import FulfillmentTask, InventoryBalance, Item, Location, Order, OrderLine, Shipment, Warehouse, Zone
 from app.models.synthetic_users import SyntheticJourney, SyntheticUser
 from app.models.monitoring import MonAlertRule, MonComponent
+from app.models.batch import BatchJob, BatchJobStep
 
 
 class _UnavailableDatabase:
@@ -113,6 +114,18 @@ async def warehouse_client(client: AsyncClient):
         ("MON-WORKFLOW-HIGH", "WF-ORDER-WORKFLOW", "workflow_failure_count", "HIGH"), ("MON-WORKFLOW-LOW", "WF-ORDER-WORKFLOW", "workflow_failure_count", "LOW"),
     ]
     session.add_all([MonAlertRule(rule_code=code, name=code, description=code, component_id=component_rows[component].id, metric_name=metric, condition_operator="GT", threshold_value=1, severity=severity, enabled=True, dedupe_window_minutes=15) for code, component, metric, severity in monitoring_rules])
+    batch_definitions = [
+        ("BATCH-INV-RECON", "Nightly Inventory Reconciliation", "INVENTORY_RECONCILIATION", ["EXTRACT_INVENTORY_BALANCES", "VALIDATE_BALANCES", "RECONCILE_ON_HAND", "GENERATE_VARIANCE_REPORT", "PUBLISH_RESULTS"]),
+        ("BATCH-ORDER-RELEASE", "Wave Order Release", "ORDER_RELEASE", ["SELECT_RELEASE_CANDIDATES", "VALIDATE_RELEASE_PREREQUISITES", "RELEASE_ORDERS", "PUBLISH_RELEASE_SUMMARY"]),
+        ("BATCH-SHIP-SYNC", "Shipment Status Synchronization", "SHIPMENT_SYNC", ["EXTRACT_OPEN_SHIPMENTS", "SYNC_CARRIER_STATUS", "VALIDATE_STATUS_CHANGES", "PUBLISH_SHIPMENT_RESULTS"]),
+        ("BATCH-LOW-STOCK", "Low Stock Notification Batch", "LOW_STOCK_NOTIFICATION", ["SCAN_LOW_STOCK", "BUILD_NOTIFICATION_PAYLOADS", "PUBLISH_NOTIFICATIONS", "RECORD_NOTIFICATION_RESULTS"]),
+        ("BATCH-INV-SNAPSHOT", "Inventory Snapshot Batch", "INVENTORY_SNAPSHOT", ["EXTRACT_BALANCE_DATA", "VALIDATE_SNAPSHOT_DATA", "WRITE_SNAPSHOT", "PUBLISH_SNAPSHOT"]),
+    ]
+    for job_code, job_name, job_type, step_codes in batch_definitions:
+        job = BatchJob(job_code=job_code, name=job_name, description=job_name, job_type=job_type, module="WAREHOUSE_FULFILLMENT", business_service="Warehouse & Fulfillment Operations", application_name="Enterprise Operations Suite", enabled=True, default_severity="MEDIUM", sla_minutes=60)
+        session.add(job)
+        session.flush()
+        session.add_all([BatchJobStep(job_id=job.id, step_code=step_code, step_name=step_code.replace("_", " "), step_order=index, step_type="PROCESS", description=step_code, enabled=True, expected_duration_ms=1000) for index, step_code in enumerate(step_codes, 1)])
     session.commit()
 
     def override_get_db():

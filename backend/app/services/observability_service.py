@@ -9,6 +9,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.models.ams import AmsTicket
+from app.models.batch import BatchRun, BatchRunEvent, BatchStepRun
 from app.models.monitoring import MonAlert, MonTriageCase, MonTriageCaseAlert
 from app.models.observability import ObsDiagnosticCase, ObsDiagnosticEvidence, ObsLogEvent, ObsMetricSample, ObsSpan, ObsTrace
 from app.schemas.observability import DiagnosticCaseResponse, DiagnosticSummary, EvidenceResponse, LogEventResponse, MetricSampleResponse, SimulationResult, SpanResponse, SuiteResult, TraceResponse
@@ -380,3 +381,35 @@ def get_summary(db: Session) -> DiagnosticSummary:
     high_confidence = db.scalar(select(func.count(ObsDiagnosticCase.id)).where(ObsDiagnosticCase.confidence_level == "HIGH")) or 0
     linked = db.scalar(select(func.count(ObsDiagnosticCase.id)).where(ObsDiagnosticCase.linked_ticket_id.is_not(None))) or 0
     return DiagnosticSummary(traces=traces, error_traces=errors, slow_spans=slow, error_logs=error_logs, metric_samples=metrics, open_diagnostic_cases=open_cases, high_confidence_diagnoses=high_confidence, linked_tickets=linked)
+
+
+def create_diagnostic_from_batch_run(db: Session, run_id: UUID) -> DiagnosticCaseResponse:
+    run = db.get(BatchRun, run_id)
+    if run is None:
+        raise ObservabilityError("Batch run not found.", 404)
+    if run.linked_diagnostic_case_id:
+        existing = db.get(ObsDiagnosticCase, run.linked_diagnostic_case_id)
+        if existing is not None:
+            return _diagnostic_response(db, existing)
+    if run.status == "SUCCESS":
+        raise ObservabilityError("Successful batch runs do not require diagnostic cases.", 409)
+    failed_steps = db.scalars(select(BatchStepRun).where(BatchStepRun.batch_run_id == run.id, BatchStepRun.status.in_(("FAILED", "TIMEOUT", "PARTIAL_SUCCESS"))).order_by(BatchStepRun.step_order)).all()
+    alert = db.get(MonAlert, run.linked_alert_id) if run.linked_alert_id else None
+    ticket = db.get(AmsTicket, run.linked_ticket_id) if run.linked_ticket_id else None
+    confidence = "HIGH" if run.failure_type and failed_steps else "MEDIUM" if run.failure_type else "LOW"
+    probable = {
+        "DATA_VALIDATION_ERROR": "Batch validation or reconciliation data was invalid.",
+        "BUSINESS_RULE_FAILURE": "Batch processing was blocked by an order-release business rule.",
+        "EXTERNAL_SYSTEM_ERROR": "The batch external dependency failed or timed out.",
+        "PARTIAL_RECORD_FAILURE": "A subset of batch records failed during notification processing.",
+    }.get(run.failure_type or "", "Batch failure requires additional evidence.")
+    row = _create_diagnostic(db, title=f"Diagnosis for {run.run_number}", description=run.summary, severity="HIGH" if run.status in ("FAILED", "TIMEOUT") else "MEDIUM", source_type="SIMULATION", source_id=run.id, probable_cause=probable, confidence_level=confidence, recommended_next_steps="Review the failed batch step and its technical context\nValidate affected records and business impact\nConfirm whether a retry is safe", diagnosis_summary=f"The batch run ended with {run.status}; the failed step and persisted failure type provide deterministic support evidence.", alert=alert, ticket=ticket)
+    _evidence(db, row, "BUSINESS_ENTITY", "batch_runs", run.id, run.run_number, f"{run.job.name}: {run.summary}", 2)
+    for step in failed_steps:
+        _evidence(db, row, "SPAN", "batch_step_runs", step.id, step.step_code, f"{step.status}: {step.failure_message or 'step failed'}", 3)
+    for event in db.scalars(select(BatchRunEvent).where(BatchRunEvent.batch_run_id == run.id, BatchRunEvent.event_type.in_(("BATCH_STEP_FAILED", "BATCH_RUN_FAILED", "BATCH_RUN_PARTIAL_SUCCESS"))).order_by(BatchRunEvent.created_at)).all():
+        _evidence(db, row, "LOG", "batch_run_events", event.id, event.event_type, event.message, 2)
+    run.linked_diagnostic_case_id, run.updated_at = row.id, _now()
+    db.add(BatchRunEvent(batch_run_id=run.id, event_type="BATCH_DIAGNOSTIC_CREATED", message=f"Diagnostic case {row.diagnostic_number} created.", event_payload={"diagnostic_case_id": str(row.id)}, created_by="system", created_at=_now()))
+    db.commit()
+    return _diagnostic_response(db, row)

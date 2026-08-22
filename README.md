@@ -3,12 +3,13 @@
 Enterprise Operations Suite is the demo application for the AI-Native AMS
 Research Platform. Phase 1 established the reusable backend and frontend
 foundation. Prompts 04 through 06 added deterministic supportability sources,
-and Prompt 07 adds application-level observability evidence for support
-diagnosis.
+and Prompt 07 added application-level observability evidence for support
+diagnosis. Prompt 08 adds deterministic batch operations and failure support
+flows.
 
 ## Current phase
 
-Prompt 07 — Observability-Enabled Support Diagnosis.
+Prompt 08 — Batch Jobs and Batch Failure Scenarios.
 
 The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
@@ -26,6 +27,11 @@ Prompt 06 adds a deterministic monitored-component catalog, alert rules,
 deduplicated noisy alerts, manual triage cases, and monitoring-origin AMS
 tickets. It deliberately provides symptoms without traces, logs, or automated
 root-cause diagnosis.
+Prompt 07 adds simulated traces, spans, structured logs, metric samples, and
+evidence-backed diagnostic cases without external observability export.
+Prompt 08 adds five batch job definitions, ordered steps, synchronous run
+history, failure scenarios, and deterministic links to exceptions, AMS tickets,
+and diagnostic cases.
 
 ## Infrastructure status
 
@@ -279,9 +285,9 @@ cd ../frontend
 npm run build
 ```
 
-Deferred capabilities include observability-enabled diagnosis, batch failures,
-returns, replenishment, wave planning, carrier
-integrations, background jobs, adjustment approvals, external ITSM
+Deferred capabilities include real scheduling, async workers, batch retry
+orchestration, external file transfer, returns, replenishment, wave planning,
+carrier integrations, background jobs, adjustment approvals, external ITSM
 connectors, notifications, ticket analytics, anomaly detection, root-cause
 inference, LLM summaries, agents, and autonomous remediation.
 
@@ -318,7 +324,8 @@ npm run build
 
 The backend remains on port `8050` and the frontend remains on port `4001`.
 Real OpenTelemetry export, Tempo, Loki, Prometheus scraping, Grafana
-dashboards, batch failures, and AI-native support agents remain deferred.
+dashboards, real scheduling, async workers, and AI-native support agents
+remain deferred.
 
 ## Prompt 07 observability-enabled diagnosis
 
@@ -370,5 +377,58 @@ npm run build
 
 The backend remains on port `8050` and the frontend remains on port `4001`.
 Real OpenTelemetry export, Tempo, Loki, Prometheus scraping, Grafana
-dashboards, AI-native diagnosis, autonomous remediation, and batch failures
+dashboards, AI-native diagnosis, autonomous remediation, and real scheduling
 are deferred.
+
+## Prompt 08 batch operations and failure scenarios
+
+The `batch_jobs`, `batch_job_steps`, `batch_runs`, `batch_step_runs`, and
+`batch_run_events` tables support manually triggered deterministic batch
+processing:
+
+```text
+Batch job → Ordered step runs → Success/failure/timeout/partial result
+          → Operational exception → BATCH AMS ticket → Optional diagnostic case
+```
+
+The batch catalog contains inventory reconciliation, order release, shipment
+status synchronization, low-stock notification, and inventory snapshot jobs.
+The simulations cover normal reconciliation, reconciliation validation
+failure, order-release business-rule failure, shipment synchronization
+timeout, low-stock notification partial failure, and a combined failure suite.
+Runs are synchronous API/UI simulations; no scheduler, worker, queue, or
+external file transfer is introduced.
+
+Batch APIs include job and run summaries, job/run detail, run events, support
+artifact creation, and the six `/api/v1/batch/simulations/*` endpoints.
+Batch-origin tickets use source `BATCH` and source module
+`BATCH_OPERATIONS`. When requested, failures also create deterministic
+`BATCH_OPERATIONS` exceptions and reusable observability diagnostic evidence.
+
+Batch frontend routes:
+
+- `/batch/jobs`
+- `/batch/jobs/:jobId`
+- `/batch/runs`
+- `/batch/runs/:runId`
+- `/batch/simulations`
+
+## Prompt 08 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+pytest
+
+cd ../frontend
+npm run build
+```
+
+The backend remains on port `8050` and the frontend remains on port `4001`.
+Real scheduling, async batch workers, retry orchestration, external file
+transfer, and AI-native support agents remain deferred.

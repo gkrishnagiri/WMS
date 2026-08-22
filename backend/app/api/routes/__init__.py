@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.routes.ams import router as ams_router
+from app.api.routes.batch import router as batch_router
 from app.api.routes.operations import router as operations_router
 from app.api.routes.monitoring import router as monitoring_router
 from app.api.routes.observability import router as observability_router
@@ -20,3 +21,4 @@ router.include_router(synthetic_users_router)
 router.include_router(user_reports_router)
 router.include_router(monitoring_router)
 router.include_router(observability_router)
+router.include_router(batch_router)

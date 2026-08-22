@@ -1,6 +1,7 @@
 """Database models exposed by the application."""
 
 from app.models.ams import AmsTicket, AmsTicketEvent
+from app.models.batch import BatchJob, BatchJobStep, BatchRun, BatchRunEvent, BatchStepRun
 from app.models.operations import OpsException
 from app.models.monitoring import MonAlert, MonAlertEvent, MonAlertRule, MonComponent, MonTriageCase, MonTriageCaseAlert
 from app.models.observability import ObsDiagnosticCase, ObsDiagnosticEvidence, ObsLogEvent, ObsMetricSample, ObsSpan, ObsTrace
@@ -25,6 +26,11 @@ from app.models.warehouse import (
 __all__ = [
     "AmsTicket",
     "AmsTicketEvent",
+    "BatchJob",
+    "BatchJobStep",
+    "BatchRun",
+    "BatchStepRun",
+    "BatchRunEvent",
     "Allocation",
     "FulfillmentTask",
     "InventoryBalance",
