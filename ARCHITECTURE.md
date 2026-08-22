@@ -30,6 +30,8 @@ transaction, exception, AMS, synthetic user, journey, run, and user-report
 tables.
 Revision `0006_monitoring_alert_noise` adds monitored components, alert rules,
 alerts, alert events, manual triage cases, and triage-case alert links.
+Revision `0007_observability_diagnosis` adds traces, spans, structured logs,
+metric samples, diagnostic cases, and diagnostic evidence.
 
 The operations module is organized in `app/models/operations.py`,
 `app/schemas/operations.py`, `app/services/operations_exception_service.py`,
@@ -87,6 +89,15 @@ and report-to-ticket links extend the same shell without browser automation.
 Monitoring alert, simulation, and triage pages extend the shell with the same
 typed API and TanStack Query pattern.
 
+The observability evidence module is organized in
+`app/models/observability.py`, `app/schemas/observability.py`,
+`app/services/observability_service.py`, and
+`app/api/routes/observability.py`. It stores application-level simulated
+traces, span timelines, structured logs, and metric samples in PostgreSQL.
+These records can reference monitoring alerts, manual triage cases, business
+entities, and AMS tickets without exporting to an external observability
+platform.
+
 ## Warehouse domain
 
 The warehouse domain uses PostgreSQL tables prefixed with `wf_`: warehouses,
@@ -101,6 +112,28 @@ The API is mounted at `/api/v1/warehouse` and exposes the existing read views
 plus transactional order, allocation, task, shipment, event, and ledger APIs.
 Inventory availability is calculated as on-hand minus allocated quantity;
 low stock is calculated against the item's reorder point.
+
+## Observability-enabled diagnosis flow
+
+Prompt 06 presents monitoring symptoms without context. Prompt 07 extends the
+same alert and triage flow with deterministic evidence:
+
+```text
+Alert or triage case → Trace → Spans + logs + metrics → Diagnostic case → AMS ticket
+```
+
+The database-degradation scenario correlates a slow PostgreSQL span, API and
+workflow spans, structured error logs, and metric samples into a high-
+confidence diagnosis. Redis and shipment scenarios use medium confidence.
+Insufficient-stock allocation is recorded as a high-confidence business-rule
+rejection rather than a technical outage. Diagnostic evidence is rule-based
+and human-reviewable; the system does not claim AI certainty or infer a root
+cause beyond the supplied deterministic evidence.
+
+The observability demo suite runs database, Redis, allocation, and shipment
+scenarios in a fixed order. Diagnostic cases can also be created from an
+alert, triage case, or AMS ticket when matching evidence is absent; incomplete
+cases retain low or unknown confidence.
 
 ## Warehouse transaction flow
 
@@ -144,15 +177,16 @@ Application traces and Tempo, metrics instrumentation, background workers,
 returns, replenishment, wave planning, inventory adjustment approval,
 shipment rating, carrier integrations, batch processing, external ITSM
 connectors, notifications, ticket analytics, anomaly detection, root-cause
-inference, observability-enabled diagnosis using logs/metrics/traces, batch
-failures, LLM summaries, agent orchestration, and autonomous remediation are
-deferred. Synthetic journey runs and monitoring alerts are stored for audit,
-but no browser automation, real Prometheus scraping, batch execution, or
-automated observability diagnosis is performed by this module.
+inference, real OpenTelemetry export, Tempo, Loki, Prometheus scraping,
+Grafana dashboards, batch failures, LLM summaries, agent orchestration, AI-
+native diagnosis, and autonomous remediation are deferred. Synthetic journey
+runs, monitoring alerts, and simulated observability evidence are stored for
+audit, but no browser automation, external observability export, batch
+execution, or autonomous diagnosis is performed by this module.
 
 ## Next phase
 
 The next phase can extend the controlled workflow with additional warehouse
-operations and supportability data. Observability-enabled diagnosis, batch
+operations and supportability data. Real observability integrations, batch
 failures, AI classification, ticket analytics, agentic behavior, and
-autonomous resolution remain out of scope for Prompt 06.
+autonomous resolution remain out of scope for Prompt 07.

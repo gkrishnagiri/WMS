@@ -8,6 +8,7 @@ import { CreateOrderPage, InventoryTransactionsPage, OrderDetailPage, WorkflowTa
 import { AmsTicketDetailPage, AmsTicketsPage, OperationsExceptionsPage, OperationsSimulationsPage } from "./pages/SupportabilityPages";
 import { JourneyRunsPage, SyntheticJourneysPage } from "./pages/SyntheticUserPages";
 import { NewUserReportPage, UserReportDetailPage, UserReportsPage } from "./pages/UserReportPages";
+import { DiagnosticDetailPage, DiagnosticsPage, LogsPage, MetricsPage, ObservabilityOverviewPage, ObservabilitySimulationsPage, TraceDetailPage, TracesPage } from "./pages/ObservabilityPages";
 import { MonitoringAlertsPage, MonitoringSimulationsPage, MonitoringTriageDetailPage, MonitoringTriagePage } from "./pages/MonitoringPages";
 
 export default function App() {
@@ -38,6 +39,14 @@ export default function App() {
         <Route path="/monitoring/simulations" element={<MonitoringSimulationsPage />} />
         <Route path="/monitoring/triage" element={<MonitoringTriagePage />} />
         <Route path="/monitoring/triage/:caseId" element={<MonitoringTriageDetailPage />} />
+        <Route path="/observability" element={<ObservabilityOverviewPage />} />
+        <Route path="/observability/simulations" element={<ObservabilitySimulationsPage />} />
+        <Route path="/observability/traces" element={<TracesPage />} />
+        <Route path="/observability/traces/:traceId" element={<TraceDetailPage />} />
+        <Route path="/observability/logs" element={<LogsPage />} />
+        <Route path="/observability/metrics" element={<MetricsPage />} />
+        <Route path="/observability/diagnostics" element={<DiagnosticsPage />} />
+        <Route path="/observability/diagnostics/:caseId" element={<DiagnosticDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

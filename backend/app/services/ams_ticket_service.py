@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.models.ams import AmsTicket, AmsTicketEvent
 from app.models.monitoring import MonAlert, MonAlertEvent, MonTriageCase, MonTriageCaseAlert
+from app.models.observability import ObsDiagnosticCase, ObsTrace
 from app.models.operations import OpsException
 from app.models.user_reports import AmsUserReport
 from app.schemas.ams import AmsSummary, TicketEventResponse, TicketResponse
@@ -253,6 +254,41 @@ def create_ticket_from_triage_case(db: Session, case_id: UUID) -> TicketResponse
             alert.linked_ticket_id, alert.status, alert.updated_at = ticket.id, "LINKED_TO_TICKET", now
             db.add(MonAlertEvent(alert_id=alert.id, event_type="ALERT_LINKED_TO_TICKET", from_status=old_status, to_status="LINKED_TO_TICKET", message="Alert linked to the triage case AMS ticket.", event_payload={"ticket_id": str(ticket.id), "triage_case_id": str(triage.id)}, created_by="system", created_at=now))
     db.commit()
+    return get_ticket(db, ticket.id)
+
+
+def create_ticket_from_diagnostic(db: Session, case_id: UUID, commit: bool = True) -> TicketResponse:
+    diagnostic = db.get(ObsDiagnosticCase, case_id)
+    if diagnostic is None:
+        raise AmsError("Diagnostic case not found.", 404)
+    if diagnostic.linked_ticket_id:
+        existing = db.get(AmsTicket, diagnostic.linked_ticket_id)
+        if existing is not None and existing.status not in ("CLOSED", "CANCELLED"):
+            return get_ticket(db, existing.id)
+    priority = {"CRITICAL": "P1", "HIGH": "P2", "MEDIUM": "P3", "LOW": "P4"}.get(diagnostic.severity, "P3")
+    now = _now()
+    description = (
+        f"Diagnostic case {diagnostic.diagnostic_number}.\n{diagnostic.diagnosis_summary}\n\n"
+        f"Probable cause: {diagnostic.probable_cause}\nConfidence: {diagnostic.confidence_level}\n"
+        f"Recommended next steps:\n{diagnostic.recommended_next_steps}"
+    )[:2000]
+    ticket = AmsTicket(
+        ticket_number=_next_number(db, "INCIDENT"), ticket_type="INCIDENT", severity=diagnostic.severity, priority=priority,
+        status="NEW", source="OBSERVABILITY", source_module="OBSERVABILITY", affected_entity_type="DIAGNOSTIC_CASE", affected_entity_id=diagnostic.id,
+        short_description=f"{diagnostic.diagnostic_number}: {diagnostic.title}"[:200], description=description,
+        assignment_group="AMS-WAREHOUSE-SUPPORT", business_service="Warehouse & Fulfillment Operations",
+        application_name="Enterprise Operations Suite", environment=get_settings().app_env, opened_at=now, created_at=now, updated_at=now,
+    )
+    db.add(ticket)
+    db.flush()
+    diagnostic.linked_ticket_id, diagnostic.status, diagnostic.updated_at = ticket.id, "LINKED_TO_TICKET", now
+    if diagnostic.primary_trace_id:
+        trace = db.get(ObsTrace, diagnostic.primary_trace_id)
+        if trace is not None:
+            trace.linked_ticket_id, trace.updated_at = ticket.id, now
+    _event(db, ticket, "TICKET_CREATED", f"Ticket created from diagnostic case {diagnostic.diagnostic_number}.", to_status="NEW", payload={"diagnostic_case_id": str(diagnostic.id)})
+    if commit:
+        db.commit()
     return get_ticket(db, ticket.id)
 
 

@@ -3,6 +3,7 @@
 from app.models.ams import AmsTicket, AmsTicketEvent
 from app.models.operations import OpsException
 from app.models.monitoring import MonAlert, MonAlertEvent, MonAlertRule, MonComponent, MonTriageCase, MonTriageCaseAlert
+from app.models.observability import ObsDiagnosticCase, ObsDiagnosticEvidence, ObsLogEvent, ObsMetricSample, ObsSpan, ObsTrace
 from app.models.synthetic_users import SyntheticJourney, SyntheticJourneyRun, SyntheticUser
 from app.models.user_reports import AmsUserReport
 
@@ -47,4 +48,10 @@ __all__ = [
     "MonAlertEvent",
     "MonTriageCase",
     "MonTriageCaseAlert",
+    "ObsTrace",
+    "ObsSpan",
+    "ObsLogEvent",
+    "ObsMetricSample",
+    "ObsDiagnosticCase",
+    "ObsDiagnosticEvidence",
 ]

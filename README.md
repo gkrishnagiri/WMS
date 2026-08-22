@@ -2,13 +2,13 @@
 
 Enterprise Operations Suite is the demo application for the AI-Native AMS
 Research Platform. Phase 1 established the reusable backend and frontend
-foundation. Prompt 04 added the deterministic supportability layer around the
-warehouse module, and Prompt 05 adds synthetic users and user-reported issue
-flows.
+foundation. Prompts 04 through 06 added deterministic supportability sources,
+and Prompt 07 adds application-level observability evidence for support
+diagnosis.
 
 ## Current phase
 
-Prompt 06 — Monitoring Alert Noise Without Observability.
+Prompt 07 — Observability-Enabled Support Diagnosis.
 
 The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
@@ -317,5 +317,58 @@ npm run build
 ```
 
 The backend remains on port `8050` and the frontend remains on port `4001`.
-Observability-enabled diagnosis with logs, metrics, and traces, batch
-failures, and AI-native support agents remain deferred.
+Real OpenTelemetry export, Tempo, Loki, Prometheus scraping, Grafana
+dashboards, batch failures, and AI-native support agents remain deferred.
+
+## Prompt 07 observability-enabled diagnosis
+
+The `obs_traces`, `obs_spans`, `obs_log_events`, `obs_metric_samples`,
+`obs_diagnostic_cases`, and `obs_diagnostic_evidence` tables support:
+
+```text
+Monitoring symptom → Trace/span/log/metric evidence → Diagnostic case → AMS ticket
+```
+
+The database-degradation, Redis cache failure, allocation failure, shipment
+integration failure, and combined demo-suite simulations generate deterministic
+evidence. Diagnostic confidence is rule-based: high confidence requires
+multiple matching evidence sources, while incomplete evidence remains low or
+unknown. Allocation diagnosis explicitly distinguishes insufficient inventory
+as a business-rule rejection from a technical outage.
+
+Observability APIs include summary, trace list/detail, log events, metric
+samples, diagnostic case list/detail, diagnosis creation from alerts/triage
+cases/tickets, diagnostic ticket linking, and diagnostic resolution.
+
+Simulation APIs:
+
+- POST /api/v1/observability/simulations/database-degradation
+- POST /api/v1/observability/simulations/redis-cache-failure
+- POST /api/v1/observability/simulations/allocation-failure
+- POST /api/v1/observability/simulations/shipment-integration-failure
+- POST /api/v1/observability/simulations/observability-demo-suite
+
+Frontend routes include `/observability`, `/observability/simulations`,
+`/observability/traces`, `/observability/traces/:traceId`,
+`/observability/logs`, `/observability/metrics`,
+`/observability/diagnostics`, and `/observability/diagnostics/:caseId`.
+
+## Prompt 07 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+pytest
+
+cd ../frontend
+npm run build
+```
+
+The backend remains on port `8050` and the frontend remains on port `4001`.
+Real OpenTelemetry export, Tempo, Loki, Prometheus scraping, Grafana
+dashboards, AI-native diagnosis, autonomous remediation, and batch failures
+are deferred.

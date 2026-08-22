@@ -41,6 +41,9 @@ const navigation = [
   { label: "Monitoring", path: "/monitoring/alerts" },
   { label: "Monitoring Simulations", path: "/monitoring/simulations" },
   { label: "Monitoring Triage", path: "/monitoring/triage" },
+  { label: "Observability", path: "/observability" },
+  { label: "Traces", path: "/observability/traces" },
+  { label: "Diagnostics", path: "/observability/diagnostics" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];
