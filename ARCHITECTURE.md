@@ -28,6 +28,8 @@ Alembic revisions `0002_warehouse_fulfillment`, `0003_warehouse_workflows`,
 `0004_operations_ams`, and `0005_synthetic_users_reports` create the domain,
 transaction, exception, AMS, synthetic user, journey, run, and user-report
 tables.
+Revision `0006_monitoring_alert_noise` adds monitored components, alert rules,
+alerts, alert events, manual triage cases, and triage-case alert links.
 
 The operations module is organized in `app/models/operations.py`,
 `app/schemas/operations.py`, `app/services/operations_exception_service.py`,
@@ -58,6 +60,20 @@ functional experience independently from operational exceptions. They can be
 submitted manually or by a synthetic journey, then linked idempotently to an
 AMS incident through the existing ticket-event/lifecycle foundation.
 
+The monitoring module is organized in `app/models/monitoring.py`,
+`app/schemas/monitoring.py`, `app/services/monitoring_service.py`,
+`app/api/routes/monitoring.py`, and `app/db/seed_monitoring.py`. It provides a
+deterministic component/rule catalog and six simulations that create
+deduplicated alert symptoms. Repeated signals update occurrence counts and
+last-seen timestamps while recording alert events.
+
+The triage module uses `mon_triage_cases` and `mon_triage_case_alerts` as a
+manual support-engineer working set. Alerts may be acknowledged, suppressed,
+resolved, or linked to an AMS incident. A triage case may group multiple
+alerts and then create one monitoring-origin AMS incident. This is manual
+symptom grouping: root cause is not inferred or automated in Prompt 06, and
+no observability context is attached.
+
 ## Frontend modules
 
 The shared shell provides the top bar, sidebar, and content area. Warehouse
@@ -68,6 +84,8 @@ ticket lists, ticket detail, and event timelines. Material UI cards, tables,
 and chips provide the operational views without a charting dependency.
 Synthetic journey cards, run history, user-report list/create/detail pages,
 and report-to-ticket links extend the same shell without browser automation.
+Monitoring alert, simulation, and triage pages extend the shell with the same
+typed API and TanStack Query pattern.
 
 ## Warehouse domain
 
@@ -126,14 +144,15 @@ Application traces and Tempo, metrics instrumentation, background workers,
 returns, replenishment, wave planning, inventory adjustment approval,
 shipment rating, carrier integrations, batch processing, external ITSM
 connectors, notifications, ticket analytics, anomaly detection, root-cause
-inference, LLM summaries, agent orchestration, and autonomous remediation are
-deferred. Synthetic journey runs are stored for audit, but no browser
-automation, monitoring alert, batch execution, or observability diagnosis is
-performed by this module.
+inference, observability-enabled diagnosis using logs/metrics/traces, batch
+failures, LLM summaries, agent orchestration, and autonomous remediation are
+deferred. Synthetic journey runs and monitoring alerts are stored for audit,
+but no browser automation, real Prometheus scraping, batch execution, or
+automated observability diagnosis is performed by this module.
 
 ## Next phase
 
 The next phase can extend the controlled workflow with additional warehouse
-operations and supportability data. Monitoring noise, observability-enabled
-diagnosis, batch failures, AI classification, ticket analytics, agentic
-behavior, and autonomous resolution remain out of scope for Prompt 05.
+operations and supportability data. Observability-enabled diagnosis, batch
+failures, AI classification, ticket analytics, agentic behavior, and
+autonomous resolution remain out of scope for Prompt 06.

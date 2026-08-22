@@ -38,6 +38,9 @@ const navigation = [
   { label: "Synthetic Journeys", path: "/synthetic-users/journeys" },
   { label: "Journey Runs", path: "/synthetic-users/runs" },
   { label: "User Reports", path: "/ams/user-reports" },
+  { label: "Monitoring", path: "/monitoring/alerts" },
+  { label: "Monitoring Simulations", path: "/monitoring/simulations" },
+  { label: "Monitoring Triage", path: "/monitoring/triage" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];

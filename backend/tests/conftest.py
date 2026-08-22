@@ -13,6 +13,7 @@ from app.main import app
 from app.core.config import Settings
 from app.models.warehouse import FulfillmentTask, InventoryBalance, Item, Location, Order, OrderLine, Shipment, Warehouse, Zone
 from app.models.synthetic_users import SyntheticJourney, SyntheticUser
+from app.models.monitoring import MonAlertRule, MonComponent
 
 
 class _UnavailableDatabase:
@@ -90,6 +91,28 @@ async def warehouse_client(client: AsyncClient):
         SyntheticJourney(journey_code="JRN-SHIP-BEFORE-PACK", name="Ship Before Pack Functional Failure", description="Attempt to ship an order while packing is incomplete.", persona="SHIPPING_COORDINATOR", journey_type="VALIDATION_FAILURE", expected_outcome="FAILED", creates_user_report_on_failure=True, creates_ticket_on_failure=True, enabled=True, default_payload={"complete_pick": False}),
         SyntheticJourney(journey_code="JRN-MANUAL-FUNCTIONAL-ISSUE", name="Manual Functional Issue", description="Submit a business-user issue that is not automatically detected.", persona="BUSINESS_USER", journey_type="USER_REPORTED_ISSUE", expected_outcome="SUCCESS", creates_user_report_on_failure=True, creates_ticket_on_failure=True, enabled=True, default_payload={}),
     ])
+    monitoring_components = [
+        ("EOS-FRONTEND", "EOS Frontend", "FRONTEND", "PRESENTATION"),
+        ("EOS-BACKEND-API", "EOS Backend API", "API", "APPLICATION"),
+        ("EOS-POSTGRES", "EOS PostgreSQL", "DATABASE", "DATA"),
+        ("EOS-REDIS", "EOS Redis", "CACHE", "CACHE"),
+        ("WF-ORDER-WORKFLOW", "Warehouse Order Workflow", "WORKFLOW", "BUSINESS_WORKFLOW"),
+        ("WF-INVENTORY-SERVICE", "Warehouse Inventory Service", "BUSINESS_PROCESS", "BUSINESS_WORKFLOW"),
+        ("WF-SHIPMENT-SERVICE", "Warehouse Shipment Service", "BUSINESS_PROCESS", "BUSINESS_WORKFLOW"),
+    ]
+    component_rows = {}
+    for code, name, component_type, layer in monitoring_components:
+        component_rows[code] = MonComponent(component_code=code, name=name, component_type=component_type, layer=layer, environment="test", owner_team="Test Support", business_service="Warehouse & Fulfillment Operations", application_name="Enterprise Operations Suite", status="ACTIVE", description=name)
+        session.add(component_rows[code])
+    session.flush()
+    monitoring_rules = [
+        ("MON-API-LATENCY", "EOS-BACKEND-API", "api_latency_ms", "HIGH"), ("MON-API-ERROR", "EOS-BACKEND-API", "api_error_rate", "MEDIUM"),
+        ("MON-FRONTEND-API", "EOS-FRONTEND", "frontend_api_failure_count", "HIGH"), ("MON-WORKFLOW-FAILURE", "WF-ORDER-WORKFLOW", "workflow_failure_count", "MEDIUM"),
+        ("MON-DB-LATENCY", "EOS-POSTGRES", "db_latency_ms", "HIGH"), ("MON-INV-ALLOC", "WF-INVENTORY-SERVICE", "allocation_failure_count", "HIGH"),
+        ("MON-REDIS-FLAP", "EOS-REDIS", "redis_connection_failures", "HIGH"), ("MON-SHIPMENT-EXC", "WF-SHIPMENT-SERVICE", "shipment_exception_count", "MEDIUM"),
+        ("MON-WORKFLOW-HIGH", "WF-ORDER-WORKFLOW", "workflow_failure_count", "HIGH"), ("MON-WORKFLOW-LOW", "WF-ORDER-WORKFLOW", "workflow_failure_count", "LOW"),
+    ]
+    session.add_all([MonAlertRule(rule_code=code, name=code, description=code, component_id=component_rows[component].id, metric_name=metric, condition_operator="GT", threshold_value=1, severity=severity, enabled=True, dedupe_window_minutes=15) for code, component, metric, severity in monitoring_rules])
     session.commit()
 
     def override_get_db():

@@ -8,7 +8,7 @@ flows.
 
 ## Current phase
 
-Prompt 05 — Synthetic Users and User-Reported Functional Issues.
+Prompt 06 — Monitoring Alert Noise Without Observability.
 
 The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
@@ -22,6 +22,10 @@ lifecycle.
 Prompt 05 adds six deterministic synthetic users, five cataloged journeys,
 auditable journey runs, user-reported functional issues, and ticket creation
 from user reports.
+Prompt 06 adds a deterministic monitored-component catalog, alert rules,
+deduplicated noisy alerts, manual triage cases, and monitoring-origin AMS
+tickets. It deliberately provides symptoms without traces, logs, or automated
+root-cause diagnosis.
 
 ## Infrastructure status
 
@@ -122,6 +126,31 @@ User report APIs:
 - POST /api/v1/ams/user-reports/{report_id}/acknowledge
 - POST /api/v1/ams/user-reports/{report_id}/resolve
 
+Monitoring APIs:
+
+- GET /api/v1/monitoring/summary
+- GET /api/v1/monitoring/components
+- GET /api/v1/monitoring/rules
+- GET /api/v1/monitoring/alerts
+- GET /api/v1/monitoring/alerts/{alert_id}
+- POST /api/v1/monitoring/alerts/{alert_id}/acknowledge
+- POST /api/v1/monitoring/alerts/{alert_id}/suppress
+- POST /api/v1/monitoring/alerts/{alert_id}/resolve
+- POST /api/v1/monitoring/alerts/{alert_id}/create-ticket
+- GET /api/v1/monitoring/alerts/{alert_id}/events
+- GET/POST /api/v1/monitoring/triage-cases
+- GET /api/v1/monitoring/triage-cases/{case_id}
+- POST /api/v1/monitoring/triage-cases/{case_id}/add-alerts
+- POST /api/v1/monitoring/triage-cases/{case_id}/start-investigation
+- POST /api/v1/monitoring/triage-cases/{case_id}/resolve
+- POST /api/v1/monitoring/triage-cases/{case_id}/create-ticket
+- POST /api/v1/monitoring/simulations/api-latency-cascade
+- POST /api/v1/monitoring/simulations/database-degradation
+- POST /api/v1/monitoring/simulations/redis-flapping
+- POST /api/v1/monitoring/simulations/frontend-error-burst
+- POST /api/v1/monitoring/simulations/warehouse-workflow-noise
+- POST /api/v1/monitoring/simulations/noisy-alert-storm
+
 After applying the Alembic migrations, load deterministic demo data with:
 
     cd backend
@@ -129,6 +158,7 @@ After applying the Alembic migrations, load deterministic demo data with:
     alembic upgrade head
     python -m app.db.seed_warehouse
     python -m app.db.seed_synthetic_users
+    python -m app.db.seed_monitoring
 
 Supported backend variables are documented in `backend/.env.example`,
 including `APP_*`, `BACKEND_CORS_ORIGINS`, `DATABASE_*`, `REDIS_*`,
@@ -164,6 +194,10 @@ Warehouse frontend routes:
 - /ams/user-reports
 - /ams/user-reports/new
 - /ams/user-reports/:reportId
+- /monitoring/alerts
+- /monitoring/simulations
+- /monitoring/triage
+- /monitoring/triage/:caseId
 
 The existing /, /health, and /about routes remain available.
 
@@ -176,6 +210,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 alembic upgrade head
 python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
 pytest
 
 cd ../frontend
@@ -243,8 +279,43 @@ cd ../frontend
 npm run build
 ```
 
-Deferred capabilities include monitoring alert noise, observability-enabled
-diagnosis, batch failures, returns, replenishment, wave planning, carrier
+Deferred capabilities include observability-enabled diagnosis, batch failures,
+returns, replenishment, wave planning, carrier
 integrations, background jobs, adjustment approvals, external ITSM
 connectors, notifications, ticket analytics, anomaly detection, root-cause
 inference, LLM summaries, agents, and autonomous remediation.
+
+## Prompt 06 monitoring alert-noise layer
+
+The `mon_components`, `mon_alert_rules`, `mon_alerts`, `mon_alert_events`,
+`mon_triage_cases`, and `mon_triage_case_alerts` tables support:
+
+```text
+Monitoring symptom → Repeated/noisy alerts → Manual triage case → AMS incident
+```
+
+The six monitoring simulations are application-level demo APIs, not
+Prometheus scraping. They cover API latency cascades, database degradation,
+Redis flapping, frontend error bursts, warehouse workflow noise, and a
+combined alert storm. Alert lifecycle actions include acknowledgement,
+suppression, resolution, and ticket creation. Triage cases preserve
+human-entered analysis notes and do not infer a root cause.
+
+## Prompt 06 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+pytest
+
+cd ../frontend
+npm run build
+```
+
+The backend remains on port `8050` and the frontend remains on port `4001`.
+Observability-enabled diagnosis with logs, metrics, and traces, batch
+failures, and AI-native support agents remain deferred.

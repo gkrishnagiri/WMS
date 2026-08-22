@@ -8,6 +8,7 @@ import { CreateOrderPage, InventoryTransactionsPage, OrderDetailPage, WorkflowTa
 import { AmsTicketDetailPage, AmsTicketsPage, OperationsExceptionsPage, OperationsSimulationsPage } from "./pages/SupportabilityPages";
 import { JourneyRunsPage, SyntheticJourneysPage } from "./pages/SyntheticUserPages";
 import { NewUserReportPage, UserReportDetailPage, UserReportsPage } from "./pages/UserReportPages";
+import { MonitoringAlertsPage, MonitoringSimulationsPage, MonitoringTriageDetailPage, MonitoringTriagePage } from "./pages/MonitoringPages";
 
 export default function App() {
   return (
@@ -33,6 +34,10 @@ export default function App() {
         <Route path="/ams/user-reports" element={<UserReportsPage />} />
         <Route path="/ams/user-reports/new" element={<NewUserReportPage />} />
         <Route path="/ams/user-reports/:reportId" element={<UserReportDetailPage />} />
+        <Route path="/monitoring/alerts" element={<MonitoringAlertsPage />} />
+        <Route path="/monitoring/simulations" element={<MonitoringSimulationsPage />} />
+        <Route path="/monitoring/triage" element={<MonitoringTriagePage />} />
+        <Route path="/monitoring/triage/:caseId" element={<MonitoringTriageDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
