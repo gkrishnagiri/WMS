@@ -500,3 +500,68 @@ The backend remains on port `8050` and the frontend remains on port `4001`.
 External LLMs, OpenAI/Anthropic SDKs, LangGraph, LiteLLM, RAG, embeddings,
 vector stores, autonomous remediation, notification sending, and ServiceNow
 integration are explicitly deferred.
+
+## Prompt 10 governed AI configuration
+
+The governed AI configuration layer adds provider and model catalogs, versioned
+prompt templates, safety policies/rules, invocation audit logs, daily usage
+aggregates, and guardrail events. The only executable provider is the local,
+deterministic `MOCK_GOVERNED` provider with model
+`MOCK-SUPPORT-COPILOT-001`; no external network or model SDK is used.
+
+The request flow is:
+
+```text
+Task request → provider/model/template selection → safety evaluation
+             → deterministic mock response → invocation audit + usage aggregate
+```
+
+The seed is idempotent:
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.db.seed_ai_config
+```
+
+It creates one enabled mock provider, disabled non-mock placeholders, one
+enabled mock model, six prompt templates, one governance policy, and seven
+deterministic safety rules. Rules block obvious API-key/password material,
+destructive ticket/data requests, and external-message requests; warnings are
+recorded without blocking the mock invocation.
+
+AI configuration APIs are available under `/api/v1/ai-config` for summaries,
+providers, models, prompt templates, safety policies/rules, test invocations,
+invocation audit records, usage aggregates, guardrail events, and safety-only
+checks. The frontend routes are:
+
+- `/ai-config`
+- `/ai-config/providers`
+- `/ai-config/prompts`
+- `/ai-config/safety`
+- `/ai-config/invocations`
+- `/ai-config/usage`
+- `/ai-config/test`
+
+## Prompt 10 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+python -m app.db.seed_copilot
+python -m app.db.seed_ai_config
+pytest
+
+cd ../frontend
+npm run build
+```
+
+The backend remains on port `8050` and the frontend remains on port `4001`.
+Real external LLM calls, OpenAI/Azure/Anthropic SDKs, LangGraph, LiteLLM,
+RAG, embeddings/vector stores, autonomous remediation, tool execution,
+production secret storage, and ServiceNow integration are deferred.

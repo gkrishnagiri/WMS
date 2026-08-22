@@ -49,6 +49,9 @@ const navigation = [
   { label: "Batch Simulations", path: "/batch/simulations" },
   { label: "Copilot", path: "/copilot" },
   { label: "Copilot Sessions", path: "/copilot/sessions" },
+  { label: "AI Config", path: "/ai-config" },
+  { label: "AI Invocations", path: "/ai-config/invocations" },
+  { label: "AI Safety", path: "/ai-config/safety" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];

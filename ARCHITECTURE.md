@@ -148,6 +148,27 @@ rerun anything, and it does not change warehouse business data. The analyze
 endpoint is a deterministic convenience flow that creates a session,
 snapshot, recommendations, action plan, and investigation checklist.
 
+The governed AI configuration module is organized in
+`app/models/ai_config.py`, `app/schemas/ai_config.py`,
+`app/services/ai_config_service.py`, `app/services/ai_safety_service.py`,
+`app/services/ai_provider_gateway.py`, `app/api/routes/ai_config.py`, and
+`app/db/seed_ai_config.py`. It separates provider/model selection, prompt
+template registry, safety policy evaluation, invocation auditing, usage
+accounting, and guardrail events from copilot business logic.
+
+The only executable provider is the deterministic `MOCK_GOVERNED` provider:
+
+```text
+AI request → enabled model/provider → prompt template → safety rules
+          → mock response or governed block → audit log + daily usage
+```
+
+Safety blocks are logged without invoking the provider. Warnings are logged and
+the deterministic mock may proceed. Rendered prompts are sanitized for the
+local demo and no API keys or production credentials are stored. Disabled
+non-mock providers cannot be invoked. Prompt 09's deterministic copilot
+continues to operate independently; it is not replaced by an external model.
+
 ## Warehouse domain
 
 The warehouse domain uses PostgreSQL tables prefixed with `wf_`: warehouses,
@@ -229,8 +250,9 @@ shipment rating, carrier integrations, real scheduling, async batch workers,
 batch retry orchestration, external file transfer, external ITSM connectors,
 notifications, ticket analytics, anomaly detection, root-cause
 inference, real OpenTelemetry export, Tempo, Loki, Prometheus scraping,
-Grafana dashboards, LLM summaries, agent orchestration, AI-
-native diagnosis, and autonomous remediation are deferred. Synthetic journey
+Grafana dashboards, LLM summaries, agent orchestration, AI-native diagnosis,
+governed external LLM execution, and autonomous remediation are deferred.
+Synthetic journey
 runs, monitoring alerts, and simulated observability evidence are stored for
 audit, but no browser automation, external observability export, batch
 execution, or autonomous diagnosis is performed by this module.
@@ -238,6 +260,7 @@ execution, or autonomous diagnosis is performed by this module.
 ## Next phase
 
 The next phase can extend the controlled workflow with additional warehouse
-operations and supportability data. Real scheduling, retry orchestration,
-external batch integrations, AI classification, ticket analytics, agentic
-behavior, and autonomous resolution remain out of scope for Prompt 09.
+operations and supportability data. Real external LLM/provider SDK
+integration, LangGraph/LiteLLM, RAG, embeddings/vector storage, tool execution,
+AI classification, ticket analytics, agentic behavior, and autonomous
+resolution remain out of scope for Prompt 10.

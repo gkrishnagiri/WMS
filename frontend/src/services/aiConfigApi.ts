@@ -1,0 +1,27 @@
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8050").replace(/\/$/, "");
+
+export interface Provider { id: string; provider_code: string; name: string; provider_type: string; description: string; base_url: string | null; auth_type: string; enabled: boolean; is_mock: boolean; default_timeout_seconds: number; created_at: string; updated_at: string; }
+export interface ModelConfig { id: string; model_code: string; provider_id: string; provider_code: string; display_name: string; model_name: string; model_family: string; purpose: string; enabled: boolean; is_default: boolean; temperature: number; top_p: number; max_output_tokens: number; context_window_tokens: number; cost_per_1k_input_tokens: number; cost_per_1k_output_tokens: number; created_at: string; updated_at: string; }
+export interface PromptTemplate { id: string; template_code: string; name: string; description: string; task_type: string; template_version: number; system_template: string; user_template: string; input_schema: Record<string, unknown> | null; output_schema: Record<string, unknown> | null; enabled: boolean; is_default: boolean; created_at: string; updated_at: string; }
+export interface SafetyPolicy { id: string; policy_code: string; name: string; description: string; policy_scope: string; enabled: boolean; blocking_mode: string; created_at: string; updated_at: string; }
+export interface SafetyRule { id: string; policy_id: string; policy_code: string; rule_code: string; name: string; description: string; rule_type: string; severity: string; enabled: boolean; match_pattern: string; action: string; created_at: string; updated_at: string; }
+export interface GuardrailEvent { id: string; invocation_id: string; policy_id: string | null; rule_id: string | null; event_type: string; severity: string; message: string; matched_text_summary: string | null; created_at: string; }
+export interface Invocation { id: string; invocation_number: string; provider_id: string | null; provider_code: string | null; model_config_id: string | null; model_code: string | null; template_id: string | null; template_code: string | null; policy_id: string | null; policy_code: string | null; request_source: string; request_source_id: string | null; task_type: string; status: string; input_summary: string; prompt_rendered: string; response_text: string | null; response_json: Record<string, unknown> | null; safety_status: string; blocked_reason: string | null; latency_ms: number; input_tokens_estimated: number; output_tokens_estimated: number; total_tokens_estimated: number; cost_estimated: number; created_by: string; created_at: string; updated_at: string; guardrail_events: GuardrailEvent[]; }
+export interface UsageDaily { id: string; usage_date: string; provider_code: string; model_code: string; task_type: string; invocation_count: number; blocked_count: number; input_tokens_estimated: number; output_tokens_estimated: number; total_tokens_estimated: number; cost_estimated: number; created_at: string; updated_at: string; }
+export interface AiConfigSummary { providers: number; enabled_providers: number; models: number; enabled_models: number; prompt_templates: number; safety_policies: number; safety_rules: number; invocations_today: number; blocked_invocations_today: number; estimated_tokens_today: number; estimated_cost_today: number; }
+export interface SafetyMatch { rule_code: string; name: string; action: string; severity: string; message: string; }
+export interface SafetyCheck { decision: string; safety_status: string; matched_rules: SafetyMatch[]; message: string; }
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> { const response = await fetch(apiBaseUrl + path, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(`AI Config API returned ${response.status}: ${typeof body === "object" && body?.detail ? body.detail : "request failed"}`); return body as T; }
+export const getAiConfigSummary = () => request<AiConfigSummary>("/api/v1/ai-config/summary");
+export const getProviders = () => request<Provider[]>("/api/v1/ai-config/providers");
+export const getModels = () => request<ModelConfig[]>("/api/v1/ai-config/models");
+export const getPromptTemplates = () => request<PromptTemplate[]>("/api/v1/ai-config/prompt-templates");
+export const getSafetyPolicies = () => request<SafetyPolicy[]>("/api/v1/ai-config/safety-policies");
+export const getSafetyRules = () => request<SafetyRule[]>("/api/v1/ai-config/safety-rules");
+export const getInvocations = () => request<Invocation[]>("/api/v1/ai-config/invocations");
+export const getInvocation = (id: string) => request<Invocation>(`/api/v1/ai-config/invocations/${id}`);
+export const getUsageDaily = () => request<UsageDaily[]>("/api/v1/ai-config/usage-daily");
+export const getGuardrailEvents = () => request<GuardrailEvent[]>("/api/v1/ai-config/guardrail-events");
+export const runSafetyCheck = (text: string) => request<SafetyCheck>("/api/v1/ai-config/safety-check", { method: "POST", body: JSON.stringify({ text }) });
+export function runTestInvocation(payload: { task_type: string; input_payload: { message: string }; template_code: string; model_code: string; request_source: string }) { return request<Invocation>("/api/v1/ai-config/test-invocation", { method: "POST", body: JSON.stringify(payload) }); }

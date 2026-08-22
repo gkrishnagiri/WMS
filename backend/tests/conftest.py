@@ -17,6 +17,8 @@ from app.models.monitoring import MonAlertRule, MonComponent
 from app.models.batch import BatchJob, BatchJobStep
 from app.models.copilot import CopilotSafeAction
 from app.db.seed_copilot import SAFE_ACTIONS
+from app.models.ai_config import AiModelConfig, AiPromptTemplate, AiProvider, AiSafetyPolicy, AiSafetyPolicyRule
+from app.db.seed_ai_config import PROVIDERS, RULES, TEMPLATES
 
 
 class _UnavailableDatabase:
@@ -129,6 +131,18 @@ async def warehouse_client(client: AsyncClient):
         session.flush()
         session.add_all([BatchJobStep(job_id=job.id, step_code=step_code, step_name=step_code.replace("_", " "), step_order=index, step_type="PROCESS", description=step_code, enabled=True, expected_duration_ms=1000) for index, step_code in enumerate(step_codes, 1)])
     session.add_all([CopilotSafeAction(action_code=code, name=name, description=description, target_module=module, action_type=action_type, risk_level=risk, requires_human_approval=True, enabled=True) for code, name, description, module, action_type, risk in SAFE_ACTIONS])
+    provider_rows = {}
+    for code, name, provider_type, description, base_url, auth_type, enabled, is_mock in PROVIDERS:
+        provider_rows[code] = AiProvider(provider_code=code, name=name, provider_type=provider_type, description=description, base_url=base_url, auth_type=auth_type, enabled=enabled, is_mock=is_mock, default_timeout_seconds=30)
+        session.add(provider_rows[code])
+    session.flush()
+    session.add(AiModelConfig(model_code="MOCK-SUPPORT-COPILOT-001", provider_id=provider_rows["MOCK_GOVERNED"].id, display_name="Mock Support Copilot", model_name="mock-governed-v1", model_family="DETERMINISTIC", purpose="GENERAL_TEST", enabled=True, is_default=True, temperature=0, top_p=1, max_output_tokens=1000, context_window_tokens=8000, cost_per_1k_input_tokens=0, cost_per_1k_output_tokens=0))
+    session.add(AiModelConfig(model_code="DISABLED-EXTERNAL-001", provider_id=provider_rows["OPENAI_DISABLED_PLACEHOLDER"].id, display_name="Disabled External Placeholder", model_name="disabled-external", model_family="PLACEHOLDER", purpose="GENERAL_TEST", enabled=False, is_default=False, temperature=0, top_p=1, max_output_tokens=1000, context_window_tokens=8000, cost_per_1k_input_tokens=0, cost_per_1k_output_tokens=0))
+    session.add_all([AiPromptTemplate(template_code=code, name=name, description=description, task_type=task_type, template_version=1, system_template=system_template, user_template=user_template, input_schema=input_schema, output_schema=output_schema, enabled=True, is_default=code == "TPL-GENERAL-TEST") for code, name, description, task_type, system_template, user_template, input_schema, output_schema in TEMPLATES])
+    policy = AiSafetyPolicy(policy_code="POL-COPILOT-GOVERNANCE", name="Copilot Governance", description="Test safety policy.", policy_scope="GENERAL_INVOCATION", enabled=True, blocking_mode="BLOCK")
+    session.add(policy)
+    session.flush()
+    session.add_all([AiSafetyPolicyRule(policy_id=policy.id, rule_code=code, name=name, description=description, rule_type=rule_type, severity=severity, enabled=True, match_pattern=pattern, action=action) for code, name, description, rule_type, severity, pattern, action in RULES])
     session.commit()
 
     def override_get_db():

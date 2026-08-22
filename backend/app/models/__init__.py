@@ -3,6 +3,7 @@
 from app.models.ams import AmsTicket, AmsTicketEvent
 from app.models.batch import BatchJob, BatchJobStep, BatchRun, BatchRunEvent, BatchStepRun
 from app.models.copilot import CopilotActionEvent, CopilotActionPlan, CopilotContextSnapshot, CopilotMessage, CopilotRecommendation, CopilotSafeAction, CopilotSession
+from app.models.ai_config import AiGuardrailEvent, AiInvocationLog, AiModelConfig, AiPromptTemplate, AiProvider, AiSafetyPolicy, AiSafetyPolicyRule, AiUsageDaily
 from app.models.operations import OpsException
 from app.models.monitoring import MonAlert, MonAlertEvent, MonAlertRule, MonComponent, MonTriageCase, MonTriageCaseAlert
 from app.models.observability import ObsDiagnosticCase, ObsDiagnosticEvidence, ObsLogEvent, ObsMetricSample, ObsSpan, ObsTrace
@@ -39,6 +40,14 @@ __all__ = [
     "CopilotMessage",
     "CopilotSafeAction",
     "CopilotActionEvent",
+    "AiProvider",
+    "AiModelConfig",
+    "AiPromptTemplate",
+    "AiSafetyPolicy",
+    "AiSafetyPolicyRule",
+    "AiInvocationLog",
+    "AiUsageDaily",
+    "AiGuardrailEvent",
     "Allocation",
     "FulfillmentTask",
     "InventoryBalance",

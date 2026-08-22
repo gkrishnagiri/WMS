@@ -12,6 +12,7 @@ import { DiagnosticDetailPage, DiagnosticsPage, LogsPage, MetricsPage, Observabi
 import { BatchJobDetailPage, BatchJobsPage, BatchRunDetailPage, BatchRunsPage, BatchSimulationsPage } from "./pages/BatchPages";
 import { MonitoringAlertsPage, MonitoringSimulationsPage, MonitoringTriageDetailPage, MonitoringTriagePage } from "./pages/MonitoringPages";
 import { CopilotAnalyzePage, CopilotOverviewPage, CopilotSessionDetailPage, CopilotSessionsPage } from "./pages/CopilotPages";
+import { AiConfigOverviewPage, AiInvocationsPage, AiPromptsPage, AiProvidersPage, AiSafetyPage, AiTestPage, AiUsagePage } from "./pages/AIConfigPages";
 
 export default function App() {
   return (
@@ -58,6 +59,13 @@ export default function App() {
         <Route path="/copilot/sessions" element={<CopilotSessionsPage />} />
         <Route path="/copilot/sessions/:sessionId" element={<CopilotSessionDetailPage />} />
         <Route path="/copilot/analyze" element={<CopilotAnalyzePage />} />
+        <Route path="/ai-config" element={<AiConfigOverviewPage />} />
+        <Route path="/ai-config/providers" element={<AiProvidersPage />} />
+        <Route path="/ai-config/prompts" element={<AiPromptsPage />} />
+        <Route path="/ai-config/safety" element={<AiSafetyPage />} />
+        <Route path="/ai-config/invocations" element={<AiInvocationsPage />} />
+        <Route path="/ai-config/usage" element={<AiUsagePage />} />
+        <Route path="/ai-config/test" element={<AiTestPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
