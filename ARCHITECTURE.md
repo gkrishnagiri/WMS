@@ -24,16 +24,32 @@ app/services/warehouse_service.py, and app/api/routes/warehouse.py modules
 contain the read APIs. The transaction workflow is organized in
 `app/schemas/warehouse_transactions.py` and
 `app/services/warehouse_workflow_service.py` under the same route namespace.
-Alembic revisions `0002_warehouse_fulfillment` and
-`0003_warehouse_workflows` creates the domain and transaction
+Alembic revisions `0002_warehouse_fulfillment`, `0003_warehouse_workflows`,
+and `0004_operations_ams` create the domain, transaction, exception, and AMS
 tables.
+
+The operations module is organized in `app/models/operations.py`,
+`app/schemas/operations.py`, `app/services/operations_exception_service.py`,
+and `app/api/routes/operations.py`. It records business/application symptoms
+and applies deterministic low-stock and order-stuck rules. Demo simulations
+can also mark tasks blocked, mark shipments exceptional, reduce a balance to
+low stock, or make an active order stale.
+
+The AMS module is organized in `app/models/ams.py`, `app/schemas/ams.py`,
+`app/services/ams_ticket_service.py`, and `app/api/routes/ams.py`. Tickets may
+be created manually or from an exception. Every ticket has lifecycle events,
+and the supported lifecycle is `NEW` → `ACKNOWLEDGED` or `IN_PROGRESS` →
+`RESOLVED` → `CLOSED`. A linked exception is marked `LINKED_TO_TICKET` on
+creation and `RESOLVED` when its ticket is resolved.
 
 ## Frontend modules
 
 The shared shell provides the top bar, sidebar, and content area. Warehouse
 pages use typed API functions and TanStack Query for summary, inventory,
-orders, fulfillment tasks, and shipment data. Material UI cards, tables, and
-chips provide the operational views without a charting dependency.
+orders, fulfillment tasks, and shipment data. Supportability pages use the
+same approach for exception lists, deterministic simulations, AMS summaries,
+ticket lists, ticket detail, and event timelines. Material UI cards, tables,
+and chips provide the operational views without a charting dependency.
 
 ## Warehouse domain
 
@@ -61,6 +77,15 @@ confirmation locks each source balance, reduces on-hand and allocated
 quantities together, marks allocations shipped, and writes `SHIPMENT_ISSUE`
 ledger entries.
 
+## Exception-to-ticket flow
+
+An exception is the business symptom and an AMS ticket is the support record.
+The operations service creates or refreshes one active exception for a source
+entity/type. The AMS service maps severity to priority (`CRITICAL`/`HIGH`/
+`MEDIUM`/`LOW` to `P1`/`P2`/`P3`/`P4`) and prevents a second active ticket for
+the same exception. Ticket lifecycle changes are written to
+`ams_ticket_events`; resolving a linked ticket resolves the exception.
+
 ## Infrastructure baseline
 
 The existing PostgreSQL, Redis, OpenTelemetry Collector, Prometheus, Loki,
@@ -71,12 +96,15 @@ Those files are not part of the Phase 1 application changes.
 
 Application traces and Tempo, metrics instrumentation, background workers,
 returns, replenishment, wave planning, inventory adjustment approval,
-shipment rating, carrier integrations, batch processing, anomaly detection,
-incident simulation, ticket generation, and agentic AMS behaviors are
-deferred.
+shipment rating, carrier integrations, batch processing, external ITSM
+connectors, notifications, ticket analytics, anomaly detection, root-cause
+inference, LLM summaries, agent orchestration, and autonomous remediation are
+deferred. Simulation runs are intentionally not stored in a separate table;
+the resulting exception and ticket audit records are the source of truth.
 
 ## Next phase
 
 The next phase can extend the controlled workflow with additional warehouse
-operations. Agents, AI behavior, ticket simulation, and incident management
-remain out of scope for Prompt 03.
+operations and supportability data. AI classification, ticket analytics,
+agentic behavior, and autonomous resolution remain out of scope for Prompt
+04.

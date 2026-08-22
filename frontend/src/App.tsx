@@ -5,6 +5,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { HealthPage } from "./pages/HealthPage";
 import { InventoryPage, OrdersPage, ShipmentsPage, TasksPage, WarehousePage } from "./pages/WarehousePages";
 import { CreateOrderPage, InventoryTransactionsPage, OrderDetailPage, WorkflowTasksPage } from "./pages/WarehouseWorkflowPages";
+import { AmsTicketDetailPage, AmsTicketsPage, OperationsExceptionsPage, OperationsSimulationsPage } from "./pages/SupportabilityPages";
 
 export default function App() {
   return (
@@ -21,6 +22,10 @@ export default function App() {
         <Route path="/warehouse/tasks" element={<WorkflowTasksPage />} />
         <Route path="/warehouse/shipments" element={<ShipmentsPage />} />
         <Route path="/warehouse/inventory-transactions" element={<InventoryTransactionsPage />} />
+        <Route path="/operations/exceptions" element={<OperationsExceptionsPage />} />
+        <Route path="/operations/simulations" element={<OperationsSimulationsPage />} />
+        <Route path="/ams/tickets" element={<AmsTicketsPage />} />
+        <Route path="/ams/tickets/:ticketId" element={<AmsTicketDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

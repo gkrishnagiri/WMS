@@ -1,5 +1,8 @@
 """Database models exposed by the application."""
 
+from app.models.ams import AmsTicket, AmsTicketEvent
+from app.models.operations import OpsException
+
 from app.models.warehouse import (
     Allocation,
     FulfillmentTask,
@@ -16,6 +19,8 @@ from app.models.warehouse import (
 )
 
 __all__ = [
+    "AmsTicket",
+    "AmsTicketEvent",
     "Allocation",
     "FulfillmentTask",
     "InventoryBalance",
@@ -28,4 +33,5 @@ __all__ = [
     "Shipment",
     "Warehouse",
     "Zone",
+    "OpsException",
 ]

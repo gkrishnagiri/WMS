@@ -2,11 +2,12 @@
 
 Enterprise Operations Suite is the demo application for the AI-Native AMS
 Research Platform. Phase 1 established the reusable backend and frontend
-foundation, and Prompt 03 adds the first controlled warehouse transaction workflow.
+foundation. Prompt 04 adds the first deterministic supportability layer around
+the warehouse module.
 
 ## Current phase
 
-Prompt 03 — Warehouse Transaction Workflows.
+Prompt 04 — Operational Exceptions and AMS Ticket Foundation.
 
 The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
@@ -14,6 +15,9 @@ checks, and the Warehouse & Fulfillment domain model. Prompt 03 adds the
 controlled path from customer order through allocation, pick and pack task
 completion, shipment confirmation, inventory reduction, and an auditable
 inventory transaction ledger. Allocation and shipment operations are atomic.
+Prompt 04 adds operational exception detection, deterministic failure
+simulations, AMS ticket creation, ticket events, and a controlled ticket
+lifecycle.
 
 ## Infrastructure status
 
@@ -69,6 +73,32 @@ Warehouse API endpoints:
 - GET /api/v1/warehouse/orders/{order_id}/events
 - GET /api/v1/warehouse/inventory-transactions
 
+Operations and exception APIs:
+
+- GET /api/v1/operations/exceptions
+- GET /api/v1/operations/exceptions/{exception_id}
+- POST /api/v1/operations/exceptions/{exception_id}/acknowledge
+- POST /api/v1/operations/exceptions/{exception_id}/resolve
+- POST /api/v1/operations/detect/low-stock
+- POST /api/v1/operations/detect/order-stuck
+- POST /api/v1/operations/simulations/low-stock
+- POST /api/v1/operations/simulations/task-blocked
+- POST /api/v1/operations/simulations/shipment-exception
+- POST /api/v1/operations/simulations/order-stuck
+
+AMS APIs:
+
+- GET /api/v1/ams/summary
+- GET /api/v1/ams/tickets
+- POST /api/v1/ams/tickets
+- GET /api/v1/ams/tickets/{ticket_id}
+- POST /api/v1/ams/tickets/from-exception/{exception_id}
+- POST /api/v1/ams/tickets/{ticket_id}/acknowledge
+- POST /api/v1/ams/tickets/{ticket_id}/start-work
+- POST /api/v1/ams/tickets/{ticket_id}/resolve
+- POST /api/v1/ams/tickets/{ticket_id}/close
+- GET /api/v1/ams/tickets/{ticket_id}/events
+
 After applying the Alembic migrations, load deterministic demo data with:
 
     cd backend
@@ -101,6 +131,10 @@ Warehouse frontend routes:
 - /warehouse/tasks
 - /warehouse/shipments
 - /warehouse/inventory-transactions
+- /operations/exceptions
+- /operations/simulations
+- /ams/tickets
+- /ams/tickets/:ticketId
 
 The existing /, /health, and /about routes remain available.
 
@@ -135,6 +169,35 @@ The workflow tables are `wf_allocations`, `wf_inventory_transactions`, and
 task start/complete actions, and the transaction ledger at port `4001`; the
 backend remains on port `8050`.
 
-Known deferred capabilities include returns, replenishment, wave planning,
-carrier integrations, background jobs, adjustment approvals, anomaly
-detection, incidents, tickets, agents, and AI behaviors.
+## Prompt 04 supportability layer
+
+The `ops_exceptions`, `ams_tickets`, and `ams_ticket_events` tables support:
+
+```text
+Warehouse degradation or simulation → Operational exception → AMS incident →
+Acknowledge → Start work → Resolve → Close
+```
+
+Low-stock and order-stuck rules can be run through detection endpoints. The
+simulation page can deterministically reduce inventory, block a fulfillment
+task, mark a shipment as an exception, or place an order into a stale active
+status. Active exception/ticket creation is idempotent for the same source.
+The backend remains on port `8050` and the frontend remains on port `4001`.
+
+## Prompt 04 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+pytest
+
+cd ../frontend
+npm run build
+```
+
+Deferred capabilities include returns, replenishment, wave planning, carrier
+integrations, background jobs, adjustment approvals, external ITSM
+connectors, notifications, ticket analytics, anomaly detection, root-cause
+inference, LLM summaries, agents, and autonomous remediation.
