@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   Checkbox,
@@ -20,6 +21,7 @@ import {
   Typography,
   Chip,
 } from "@mui/material";
+import { Link } from "react-router-dom";
 import {
   getInventory,
   getOrders,
@@ -96,11 +98,11 @@ function InventoryTable({ rows }: { rows: InventoryBalance[] }) {
 
 export function OrdersPage() {
   const orders = useQuery({ queryKey: ["warehouse", "orders"], queryFn: getOrders });
-  return <Box><PageHeader eyebrow="Warehouse domain" title="Customer Orders" description="Demand records and their current fulfillment lifecycle status." /><PageState isLoading={orders.isLoading} isError={orders.isError} error={orders.error} />{orders.data && <OrderTable rows={orders.data} />}</Box>;
+  return <Box><Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}><PageHeader eyebrow="Warehouse domain" title="Customer Orders" description="Demand records and their current fulfillment lifecycle status." /><Button component={Link} to="/warehouse/orders/new" variant="contained">Create Order</Button></Box><PageState isLoading={orders.isLoading} isError={orders.isError} error={orders.error} />{orders.data && <OrderTable rows={orders.data} />}</Box>;
 }
 
 function OrderTable({ rows }: { rows: Order[] }) {
-  return <TableContainer component={Paper}><Table size="small"><TableHead><TableRow><TableCell>Order</TableCell><TableCell>Customer</TableCell><TableCell>Status</TableCell><TableCell>Priority</TableCell><TableCell>Requested ship date</TableCell><TableCell align="right">Lines</TableCell></TableRow></TableHead><TableBody>{rows.map((row) => <TableRow key={row.id}><TableCell><strong>{row.order_number}</strong></TableCell><TableCell>{row.customer_name}</TableCell><TableCell><StatusChip value={row.status} /></TableCell><TableCell><StatusChip value={row.priority} /></TableCell><TableCell>{row.requested_ship_date || "—"}</TableCell><TableCell align="right">{row.line_count}</TableCell></TableRow>)}</TableBody></Table></TableContainer>;
+  return <TableContainer component={Paper}><Table size="small"><TableHead><TableRow><TableCell>Order</TableCell><TableCell>Customer</TableCell><TableCell>Status</TableCell><TableCell>Priority</TableCell><TableCell>Requested ship date</TableCell><TableCell align="right">Lines</TableCell></TableRow></TableHead><TableBody>{rows.map((row) => <TableRow key={row.id}><TableCell><Button component={Link} to={`/warehouse/orders/${row.id}`} size="small">{row.order_number}</Button></TableCell><TableCell>{row.customer_name}</TableCell><TableCell><StatusChip value={row.status} /></TableCell><TableCell><StatusChip value={row.priority} /></TableCell><TableCell>{row.requested_ship_date || "—"}</TableCell><TableCell align="right">{row.line_count}</TableCell></TableRow>)}</TableBody></Table></TableContainer>;
 }
 
 export function TasksPage() {

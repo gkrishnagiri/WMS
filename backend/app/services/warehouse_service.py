@@ -240,6 +240,7 @@ def list_shipments(db: Session, status: str | None = None, carrier: str | None =
             tracking_number=shipment.tracking_number,
             status=shipment.status,
             shipped_at=shipment.shipped_at,
+            shipped_by=shipment.shipped_by,
         )
         for shipment, order, warehouse in db.execute(statement).all()
     ]

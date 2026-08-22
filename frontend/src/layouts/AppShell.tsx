@@ -32,6 +32,7 @@ const navigation = [
   { label: "Orders", path: "/warehouse/orders" },
   { label: "Fulfillment Tasks", path: "/warehouse/tasks" },
   { label: "Shipments", path: "/warehouse/shipments" },
+  { label: "Inventory Transactions", path: "/warehouse/inventory-transactions" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];

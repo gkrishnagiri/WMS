@@ -112,3 +112,4 @@ class ShipmentResponse(BaseModel):
     tracking_number: str | None
     status: str
     shipped_at: datetime | None
+    shipped_by: str | None = None

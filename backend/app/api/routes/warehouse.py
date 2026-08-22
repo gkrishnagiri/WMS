@@ -18,9 +18,21 @@ from app.schemas.warehouse import (
     WarehouseResponse,
     WarehouseSummary,
 )
+from app.schemas.warehouse_transactions import (
+    InventoryTransactionResponse,
+    OrderCreate,
+    OrderDetail,
+    OrderEventResponse,
+    ShipOrderRequest,
+)
 from app.services import warehouse_service
+from app.services import warehouse_workflow_service
 
 router = APIRouter(prefix="/api/v1/warehouse", tags=["warehouse"])
+
+
+def _workflow_error(error: warehouse_workflow_service.WorkflowError) -> HTTPException:
+    return HTTPException(status_code=error.status_code, detail=error.message)
 
 
 @router.get("/summary", response_model=WarehouseSummary)
@@ -70,6 +82,90 @@ def orders(
     db: Session = Depends(get_db),
 ) -> list[OrderResponse]:
     return warehouse_service.list_orders(db, status_filter, priority)
+
+
+@router.post("/orders", response_model=OrderDetail, status_code=status.HTTP_201_CREATED)
+def create_order(request: OrderCreate, db: Session = Depends(get_db)) -> OrderDetail:
+    try:
+        return warehouse_workflow_service.create_order(db, request)
+    except warehouse_workflow_service.WorkflowError as error:
+        db.rollback()
+        raise _workflow_error(error) from error
+
+
+@router.get("/orders/{order_id}", response_model=OrderDetail)
+def order_detail(order_id: UUID, db: Session = Depends(get_db)) -> OrderDetail:
+    try:
+        return warehouse_workflow_service.get_order_detail(db, order_id)
+    except warehouse_workflow_service.WorkflowError as error:
+        raise _workflow_error(error) from error
+
+
+@router.post("/orders/{order_id}/allocate", response_model=OrderDetail)
+def allocate_order(order_id: UUID, db: Session = Depends(get_db)) -> OrderDetail:
+    try:
+        return warehouse_workflow_service.allocate_order(db, order_id)
+    except warehouse_workflow_service.WorkflowError as error:
+        db.rollback()
+        raise _workflow_error(error) from error
+
+
+@router.post("/orders/{order_id}/release-tasks", response_model=OrderDetail)
+def release_order_tasks(order_id: UUID, db: Session = Depends(get_db)) -> OrderDetail:
+    try:
+        return warehouse_workflow_service.release_tasks(db, order_id)
+    except warehouse_workflow_service.WorkflowError as error:
+        db.rollback()
+        raise _workflow_error(error) from error
+
+
+@router.post("/tasks/{task_id}/start", response_model=TaskResponse)
+def start_task(task_id: UUID, db: Session = Depends(get_db)) -> TaskResponse:
+    try:
+        return warehouse_workflow_service.start_task(db, task_id)
+    except warehouse_workflow_service.WorkflowError as error:
+        db.rollback()
+        raise _workflow_error(error) from error
+
+
+@router.post("/tasks/{task_id}/complete", response_model=TaskResponse)
+def complete_task(task_id: UUID, db: Session = Depends(get_db)) -> TaskResponse:
+    try:
+        return warehouse_workflow_service.complete_task(db, task_id)
+    except warehouse_workflow_service.WorkflowError as error:
+        db.rollback()
+        raise _workflow_error(error) from error
+
+
+@router.post("/orders/{order_id}/ship", response_model=OrderDetail)
+def ship_order(order_id: UUID, request: ShipOrderRequest, db: Session = Depends(get_db)) -> OrderDetail:
+    try:
+        return warehouse_workflow_service.ship_order(db, order_id, request)
+    except warehouse_workflow_service.WorkflowError as error:
+        db.rollback()
+        raise _workflow_error(error) from error
+
+
+@router.get("/inventory-transactions", response_model=list[InventoryTransactionResponse])
+def inventory_transactions(
+    item_id: UUID | None = None,
+    warehouse_id: UUID | None = None,
+    order_id: UUID | None = None,
+    transaction_type: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> list[InventoryTransactionResponse]:
+    return warehouse_workflow_service.list_inventory_transactions(
+        db, item_id, warehouse_id, order_id, transaction_type, limit
+    )
+
+
+@router.get("/orders/{order_id}/events", response_model=list[OrderEventResponse])
+def order_events(order_id: UUID, db: Session = Depends(get_db)) -> list[OrderEventResponse]:
+    try:
+        return warehouse_workflow_service.list_order_events(db, order_id)
+    except warehouse_workflow_service.WorkflowError as error:
+        raise _workflow_error(error) from error
 
 
 @router.get("/tasks", response_model=list[TaskResponse])

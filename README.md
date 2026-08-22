@@ -2,18 +2,18 @@
 
 Enterprise Operations Suite is the demo application for the AI-Native AMS
 Research Platform. Phase 1 established the reusable backend and frontend
-foundation, and Prompt 02 adds the first business domain foundation.
+foundation, and Prompt 03 adds the first controlled warehouse transaction workflow.
 
 ## Current phase
 
-Prompt 02 — Warehouse & Fulfillment Operations.
+Prompt 03 — Warehouse Transaction Workflows.
 
 The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
-checks, and the Warehouse & Fulfillment domain model. The domain is
-read-focused: allocation, picking confirmation, inventory adjustments,
-shipment rating, carrier integrations, agents, incidents, and advanced
-workflows remain deferred.
+checks, and the Warehouse & Fulfillment domain model. Prompt 03 adds the
+controlled path from customer order through allocation, pick and pack task
+completion, shipment confirmation, inventory reduction, and an auditable
+inventory transaction ledger. Allocation and shipment operations are atomic.
 
 ## Infrastructure status
 
@@ -59,6 +59,15 @@ Warehouse API endpoints:
 - GET /api/v1/warehouse/orders
 - GET /api/v1/warehouse/tasks
 - GET /api/v1/warehouse/shipments
+- POST /api/v1/warehouse/orders
+- GET /api/v1/warehouse/orders/{order_id}
+- POST /api/v1/warehouse/orders/{order_id}/allocate
+- POST /api/v1/warehouse/orders/{order_id}/release-tasks
+- POST /api/v1/warehouse/tasks/{task_id}/start
+- POST /api/v1/warehouse/tasks/{task_id}/complete
+- POST /api/v1/warehouse/orders/{order_id}/ship
+- GET /api/v1/warehouse/orders/{order_id}/events
+- GET /api/v1/warehouse/inventory-transactions
 
 After applying the Alembic migrations, load deterministic demo data with:
 
@@ -87,8 +96,11 @@ Warehouse frontend routes:
 - /warehouse
 - /warehouse/inventory
 - /warehouse/orders
+- /warehouse/orders/new
+- /warehouse/orders/:orderId
 - /warehouse/tasks
 - /warehouse/shipments
+- /warehouse/inventory-transactions
 
 The existing /, /health, and /about routes remain available.
 
@@ -110,3 +122,19 @@ npm run build
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current foundation boundaries
 and deferred work.
+
+## Prompt 03 workflow
+
+```text
+Customer Order → Allocation → Fulfillment Task Release → Pick → Pack
+→ Shipment → Inventory Reduction → Inventory Transaction Ledger
+```
+
+The workflow tables are `wf_allocations`, `wf_inventory_transactions`, and
+`wf_order_events`. The frontend provides order creation, order detail actions,
+task start/complete actions, and the transaction ledger at port `4001`; the
+backend remains on port `8050`.
+
+Known deferred capabilities include returns, replenishment, wave planning,
+carrier integrations, background jobs, adjustment approvals, anomaly
+detection, incidents, tickets, agents, and AI behaviors.
