@@ -12,6 +12,7 @@ from app.db.session import get_db
 from app.main import app
 from app.core.config import Settings
 from app.models.warehouse import FulfillmentTask, InventoryBalance, Item, Location, Order, OrderLine, Shipment, Warehouse, Zone
+from app.models.synthetic_users import SyntheticJourney, SyntheticUser
 
 
 class _UnavailableDatabase:
@@ -74,6 +75,21 @@ async def warehouse_client(client: AsyncClient):
         FulfillmentTask(task_number="TASK-TEST-01", order=order, order_line_id=line.id, warehouse_id=warehouse.id, task_type="PICK", status="OPEN", priority="HIGH")
     )
     session.add(Shipment(shipment_number="SHP-TEST-01", order=order, warehouse_id=warehouse.id, carrier="UPS", status="PLANNED"))
+    session.add_all([
+        SyntheticUser(user_code="USR-ORDER-MGR-01", display_name="Olivia Order Manager", persona="ORDER_MANAGER", department="Customer Operations", role="Order Manager", email="olivia.order.manager@example.com"),
+        SyntheticUser(user_code="USR-WH-SUP-01", display_name="Sam Warehouse Supervisor", persona="WAREHOUSE_SUPERVISOR", department="Warehouse Operations", role="Warehouse Supervisor", email="sam.warehouse.supervisor@example.com"),
+        SyntheticUser(user_code="USR-PICKER-01", display_name="Priya Picker", persona="PICKER", department="Warehouse Operations", role="Picker", email="priya.picker@example.com"),
+        SyntheticUser(user_code="USR-PACKER-01", display_name="Peter Packer", persona="PACKER", department="Warehouse Operations", role="Packer", email="peter.packer@example.com"),
+        SyntheticUser(user_code="USR-SHIP-01", display_name="Sofia Shipping Coordinator", persona="SHIPPING_COORDINATOR", department="Logistics", role="Shipping Coordinator", email="sofia.shipping@example.com"),
+        SyntheticUser(user_code="USR-BIZ-USER-01", display_name="Ben Business User", persona="BUSINESS_USER", department="Commercial Operations", role="Business User", email="ben.business.user@example.com"),
+    ])
+    session.add_all([
+        SyntheticJourney(journey_code="JRN-ORDER-FULFILL-SUCCESS", name="Successful Fulfillment", description="Create, allocate, pick, pack, and ship a small customer order.", persona="ORDER_MANAGER", journey_type="SUCCESS_PATH", expected_outcome="SUCCESS", creates_user_report_on_failure=False, creates_ticket_on_failure=False, enabled=True, default_payload={}),
+        SyntheticJourney(journey_code="JRN-ALLOCATE-INSUFFICIENT-STOCK", name="Insufficient Stock Allocation Failure", description="Attempt to allocate an order that exceeds available inventory.", persona="ORDER_MANAGER", journey_type="FUNCTIONAL_FAILURE", expected_outcome="FAILED", creates_user_report_on_failure=True, creates_ticket_on_failure=True, enabled=True, default_payload={"quantity": 999999}),
+        SyntheticJourney(journey_code="JRN-PACK-BEFORE-PICK", name="Pack Before Pick Functional Failure", description="Attempt to complete packing before the pick task is complete.", persona="PACKER", journey_type="VALIDATION_FAILURE", expected_outcome="FAILED", creates_user_report_on_failure=True, creates_ticket_on_failure=True, enabled=True, default_payload={}),
+        SyntheticJourney(journey_code="JRN-SHIP-BEFORE-PACK", name="Ship Before Pack Functional Failure", description="Attempt to ship an order while packing is incomplete.", persona="SHIPPING_COORDINATOR", journey_type="VALIDATION_FAILURE", expected_outcome="FAILED", creates_user_report_on_failure=True, creates_ticket_on_failure=True, enabled=True, default_payload={"complete_pick": False}),
+        SyntheticJourney(journey_code="JRN-MANUAL-FUNCTIONAL-ISSUE", name="Manual Functional Issue", description="Submit a business-user issue that is not automatically detected.", persona="BUSINESS_USER", journey_type="USER_REPORTED_ISSUE", expected_outcome="SUCCESS", creates_user_report_on_failure=True, creates_ticket_on_failure=True, enabled=True, default_payload={}),
+    ])
     session.commit()
 
     def override_get_db():

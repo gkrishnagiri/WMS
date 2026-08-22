@@ -2,12 +2,13 @@
 
 Enterprise Operations Suite is the demo application for the AI-Native AMS
 Research Platform. Phase 1 established the reusable backend and frontend
-foundation. Prompt 04 adds the first deterministic supportability layer around
-the warehouse module.
+foundation. Prompt 04 added the deterministic supportability layer around the
+warehouse module, and Prompt 05 adds synthetic users and user-reported issue
+flows.
 
 ## Current phase
 
-Prompt 04 — Operational Exceptions and AMS Ticket Foundation.
+Prompt 05 — Synthetic Users and User-Reported Functional Issues.
 
 The application includes a FastAPI API, React/MUI application shell, request
 IDs, structured logging, configuration, PostgreSQL and Redis connectivity
@@ -18,6 +19,9 @@ inventory transaction ledger. Allocation and shipment operations are atomic.
 Prompt 04 adds operational exception detection, deterministic failure
 simulations, AMS ticket creation, ticket events, and a controlled ticket
 lifecycle.
+Prompt 05 adds six deterministic synthetic users, five cataloged journeys,
+auditable journey runs, user-reported functional issues, and ticket creation
+from user reports.
 
 ## Infrastructure status
 
@@ -99,12 +103,32 @@ AMS APIs:
 - POST /api/v1/ams/tickets/{ticket_id}/close
 - GET /api/v1/ams/tickets/{ticket_id}/events
 
+Synthetic user and journey APIs:
+
+- GET /api/v1/synthetic-users/users
+- GET /api/v1/synthetic-users/journeys
+- GET /api/v1/synthetic-users/journeys/{journey_code}
+- POST /api/v1/synthetic-users/journeys/{journey_code}/run
+- POST /api/v1/synthetic-users/run-suite
+- GET /api/v1/synthetic-users/runs
+- GET /api/v1/synthetic-users/runs/{run_id}
+
+User report APIs:
+
+- GET /api/v1/ams/user-reports
+- POST /api/v1/ams/user-reports
+- GET /api/v1/ams/user-reports/{report_id}
+- POST /api/v1/ams/user-reports/{report_id}/create-ticket
+- POST /api/v1/ams/user-reports/{report_id}/acknowledge
+- POST /api/v1/ams/user-reports/{report_id}/resolve
+
 After applying the Alembic migrations, load deterministic demo data with:
 
     cd backend
     source .venv/bin/activate
     alembic upgrade head
     python -m app.db.seed_warehouse
+    python -m app.db.seed_synthetic_users
 
 Supported backend variables are documented in `backend/.env.example`,
 including `APP_*`, `BACKEND_CORS_ORIGINS`, `DATABASE_*`, `REDIS_*`,
@@ -135,6 +159,11 @@ Warehouse frontend routes:
 - /operations/simulations
 - /ams/tickets
 - /ams/tickets/:ticketId
+- /synthetic-users/journeys
+- /synthetic-users/runs
+- /ams/user-reports
+- /ams/user-reports/new
+- /ams/user-reports/:reportId
 
 The existing /, /health, and /about routes remain available.
 
@@ -184,20 +213,38 @@ task, mark a shipment as an exception, or place an order into a stale active
 status. Active exception/ticket creation is idempotent for the same source.
 The backend remains on port `8050` and the frontend remains on port `4001`.
 
-## Prompt 04 validation
+## Prompt 05 user-driven failure layer
+
+The `synthetic_users`, `synthetic_journeys`, `synthetic_journey_runs`, and
+`ams_user_reports` tables support this deterministic flow:
+
+```text
+Synthetic user journey → Success or functional failure → User report →
+AMS incident → Existing AMS lifecycle
+```
+
+The successful fulfillment, insufficient-stock, pack-before-pick,
+ship-before-pack, and manual functional issue journeys are backend-driven;
+they do not use browser automation or monitoring. Failed journeys can create
+user reports and optionally link an idempotent AMS ticket. The seed command
+is safe to run repeatedly and creates six users and five journeys.
+
+## Prompt 05 validation
 
 ```bash
 cd backend
 source .venv/bin/activate
 alembic upgrade head
 python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
 pytest
 
 cd ../frontend
 npm run build
 ```
 
-Deferred capabilities include returns, replenishment, wave planning, carrier
+Deferred capabilities include monitoring alert noise, observability-enabled
+diagnosis, batch failures, returns, replenishment, wave planning, carrier
 integrations, background jobs, adjustment approvals, external ITSM
 connectors, notifications, ticket analytics, anomaly detection, root-cause
 inference, LLM summaries, agents, and autonomous remediation.

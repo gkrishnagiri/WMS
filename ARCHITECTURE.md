@@ -25,7 +25,8 @@ contain the read APIs. The transaction workflow is organized in
 `app/schemas/warehouse_transactions.py` and
 `app/services/warehouse_workflow_service.py` under the same route namespace.
 Alembic revisions `0002_warehouse_fulfillment`, `0003_warehouse_workflows`,
-and `0004_operations_ams` create the domain, transaction, exception, and AMS
+`0004_operations_ams`, and `0005_synthetic_users_reports` create the domain,
+transaction, exception, AMS, synthetic user, journey, run, and user-report
 tables.
 
 The operations module is organized in `app/models/operations.py`,
@@ -42,6 +43,21 @@ and the supported lifecycle is `NEW` → `ACKNOWLEDGED` or `IN_PROGRESS` →
 `RESOLVED` → `CLOSED`. A linked exception is marked `LINKED_TO_TICKET` on
 creation and `RESOLVED` when its ticket is resolved.
 
+The synthetic-user module is organized in `app/models/synthetic_users.py`,
+`app/schemas/synthetic_users.py`, `app/services/synthetic_user_service.py`,
+`app/db/seed_synthetic_users.py`, and
+`app/api/routes/synthetic_users.py`. It maintains deterministic personas and
+journey definitions and executes warehouse workflows by calling existing
+service-layer functions directly. Runs persist status, timing, entity IDs,
+failure details, and linked report/ticket IDs.
+
+The user-report module is organized in `app/models/user_reports.py`,
+`app/schemas/user_reports.py`, `app/services/user_report_service.py`, and
+`app/api/routes/user_reports.py`. Reports represent a human-reported
+functional experience independently from operational exceptions. They can be
+submitted manually or by a synthetic journey, then linked idempotently to an
+AMS incident through the existing ticket-event/lifecycle foundation.
+
 ## Frontend modules
 
 The shared shell provides the top bar, sidebar, and content area. Warehouse
@@ -50,6 +66,8 @@ orders, fulfillment tasks, and shipment data. Supportability pages use the
 same approach for exception lists, deterministic simulations, AMS summaries,
 ticket lists, ticket detail, and event timelines. Material UI cards, tables,
 and chips provide the operational views without a charting dependency.
+Synthetic journey cards, run history, user-report list/create/detail pages,
+and report-to-ticket links extend the same shell without browser automation.
 
 ## Warehouse domain
 
@@ -86,6 +104,16 @@ entity/type. The AMS service maps severity to priority (`CRITICAL`/`HIGH`/
 the same exception. Ticket lifecycle changes are written to
 `ams_ticket_events`; resolving a linked ticket resolves the exception.
 
+## Synthetic journey flow
+
+Journey execution creates a `synthetic_journey_runs` record and calls the
+existing warehouse workflow service for the controlled success and validation
+scenarios. A failed functional journey records `failure_type` and
+`failure_message`, then creates an `ams_user_reports` record for the selected
+persona. Ticket creation is controlled by the request flag; user reports and
+their tickets are linked in both directions and duplicate ticket creation is
+prevented.
+
 ## Infrastructure baseline
 
 The existing PostgreSQL, Redis, OpenTelemetry Collector, Prometheus, Loki,
@@ -99,12 +127,13 @@ returns, replenishment, wave planning, inventory adjustment approval,
 shipment rating, carrier integrations, batch processing, external ITSM
 connectors, notifications, ticket analytics, anomaly detection, root-cause
 inference, LLM summaries, agent orchestration, and autonomous remediation are
-deferred. Simulation runs are intentionally not stored in a separate table;
-the resulting exception and ticket audit records are the source of truth.
+deferred. Synthetic journey runs are stored for audit, but no browser
+automation, monitoring alert, batch execution, or observability diagnosis is
+performed by this module.
 
 ## Next phase
 
 The next phase can extend the controlled workflow with additional warehouse
-operations and supportability data. AI classification, ticket analytics,
-agentic behavior, and autonomous resolution remain out of scope for Prompt
-04.
+operations and supportability data. Monitoring noise, observability-enabled
+diagnosis, batch failures, AI classification, ticket analytics, agentic
+behavior, and autonomous resolution remain out of scope for Prompt 05.

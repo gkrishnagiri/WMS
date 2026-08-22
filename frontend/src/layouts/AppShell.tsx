@@ -35,6 +35,9 @@ const navigation = [
   { label: "Inventory Transactions", path: "/warehouse/inventory-transactions" },
   { label: "Operations", path: "/operations/exceptions" },
   { label: "AMS Tickets", path: "/ams/tickets" },
+  { label: "Synthetic Journeys", path: "/synthetic-users/journeys" },
+  { label: "Journey Runs", path: "/synthetic-users/runs" },
+  { label: "User Reports", path: "/ams/user-reports" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];

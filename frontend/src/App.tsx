@@ -6,6 +6,8 @@ import { HealthPage } from "./pages/HealthPage";
 import { InventoryPage, OrdersPage, ShipmentsPage, TasksPage, WarehousePage } from "./pages/WarehousePages";
 import { CreateOrderPage, InventoryTransactionsPage, OrderDetailPage, WorkflowTasksPage } from "./pages/WarehouseWorkflowPages";
 import { AmsTicketDetailPage, AmsTicketsPage, OperationsExceptionsPage, OperationsSimulationsPage } from "./pages/SupportabilityPages";
+import { JourneyRunsPage, SyntheticJourneysPage } from "./pages/SyntheticUserPages";
+import { NewUserReportPage, UserReportDetailPage, UserReportsPage } from "./pages/UserReportPages";
 
 export default function App() {
   return (
@@ -26,6 +28,11 @@ export default function App() {
         <Route path="/operations/simulations" element={<OperationsSimulationsPage />} />
         <Route path="/ams/tickets" element={<AmsTicketsPage />} />
         <Route path="/ams/tickets/:ticketId" element={<AmsTicketDetailPage />} />
+        <Route path="/synthetic-users/journeys" element={<SyntheticJourneysPage />} />
+        <Route path="/synthetic-users/runs" element={<JourneyRunsPage />} />
+        <Route path="/ams/user-reports" element={<UserReportsPage />} />
+        <Route path="/ams/user-reports/new" element={<NewUserReportPage />} />
+        <Route path="/ams/user-reports/:reportId" element={<UserReportDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

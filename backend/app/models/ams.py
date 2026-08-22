@@ -25,6 +25,7 @@ class AmsTicket(TimestampMixin, Base):
     source: Mapped[str] = mapped_column(String(30), nullable=False, default="MANUAL")
     source_module: Mapped[str] = mapped_column(String(80), nullable=False, default="WAREHOUSE_FULFILLMENT")
     exception_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("ops_exceptions.id"), nullable=True)
+    user_report_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("ams_user_reports.id", use_alter=True), nullable=True)
     affected_entity_type: Mapped[Optional[str]] = mapped_column(String(40))
     affected_entity_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid(as_uuid=True))
     short_description: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -59,4 +60,3 @@ class AmsTicketEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     ticket: Mapped[AmsTicket] = relationship(back_populates="events")
-

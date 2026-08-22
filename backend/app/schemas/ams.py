@@ -47,6 +47,7 @@ class TicketResponse(BaseModel):
     source: str
     source_module: str
     exception_id: UUID | None
+    user_report_id: UUID | None
     affected_entity_type: str | None
     affected_entity_id: UUID | None
     short_description: str

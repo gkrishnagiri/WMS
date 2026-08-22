@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.models.ams import AmsTicket, AmsTicketEvent
 from app.models.operations import OpsException
+from app.models.user_reports import AmsUserReport
 from app.schemas.ams import AmsSummary, TicketEventResponse, TicketResponse
 from app.services.operations_exception_service import exception_to_response
 
@@ -66,7 +67,7 @@ def _ticket_response(db: Session, ticket: AmsTicket, include_details: bool = Fal
     return TicketResponse(
         id=ticket.id, ticket_number=ticket.ticket_number, ticket_type=ticket.ticket_type, severity=ticket.severity,
         priority=ticket.priority, status=ticket.status, source=ticket.source, source_module=ticket.source_module,
-        exception_id=ticket.exception_id, affected_entity_type=ticket.affected_entity_type, affected_entity_id=ticket.affected_entity_id,
+        exception_id=ticket.exception_id, user_report_id=ticket.user_report_id, affected_entity_type=ticket.affected_entity_type, affected_entity_id=ticket.affected_entity_id,
         short_description=ticket.short_description, description=ticket.description, assignment_group=ticket.assignment_group,
         assigned_to=ticket.assigned_to, business_service=ticket.business_service, application_name=ticket.application_name,
         environment=ticket.environment, opened_at=ticket.opened_at, acknowledged_at=ticket.acknowledged_at,
@@ -140,6 +141,41 @@ def create_ticket_from_exception(db: Session, exception_id: UUID) -> TicketRespo
     exception.updated_at = now
     db.flush()
     _event(db, ticket, "TICKET_CREATED", f"Ticket created from exception {exception.exception_number}.", to_status="NEW", payload={"exception_id": str(exception.id)})
+    db.commit()
+    return get_ticket(db, ticket.id)
+
+
+def create_ticket_from_user_report(db: Session, report_id: UUID) -> TicketResponse:
+    report = db.get(AmsUserReport, report_id)
+    if report is None:
+        raise AmsError("User report not found.", 404)
+    if report.ticket_id:
+        existing = db.get(AmsTicket, report.ticket_id)
+        if existing is not None and existing.status in ACTIVE_TICKET_STATUSES:
+            return get_ticket(db, existing.id)
+    if report.status == "CANCELLED":
+        raise AmsError("Cancelled user reports cannot create tickets.", 409)
+    severity = report.severity.upper()
+    if severity not in VALID_SEVERITIES:
+        raise AmsError("Unsupported user report severity.", 400)
+    priority = {"CRITICAL": "P1", "HIGH": "P2", "MEDIUM": "P3", "LOW": "P4"}[severity]
+    source = "SYNTHETIC_USER" if report.report_channel.upper() == "SYNTHETIC_USER" else "USER_REPORTED"
+    now = _now()
+    ticket = AmsTicket(
+        ticket_number=_next_number(db, "INCIDENT"), ticket_type="INCIDENT", severity=severity, priority=priority,
+        status="NEW", source=source, source_module=report.source_module, user_report_id=report.id,
+        affected_entity_type=report.affected_entity_type, affected_entity_id=report.affected_entity_id,
+        short_description=report.title, description=(f"Reported by {report.reporter_name}. {report.description}\n\nBusiness impact: {report.business_impact}")[:2000],
+        assignment_group="AMS-WAREHOUSE-SUPPORT", business_service="Warehouse & Fulfillment Operations",
+        application_name="Enterprise Operations Suite", environment=get_settings().app_env,
+        opened_at=now, created_at=now, updated_at=now,
+    )
+    db.add(ticket)
+    db.flush()
+    report.ticket_id = ticket.id
+    report.status = "TICKET_CREATED"
+    report.updated_at = now
+    _event(db, ticket, "TICKET_CREATED", f"Ticket created from user report {report.report_number}.", to_status="NEW", payload={"user_report_id": str(report.id)})
     db.commit()
     return get_ticket(db, ticket.id)
 
