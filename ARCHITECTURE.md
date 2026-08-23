@@ -186,6 +186,36 @@ draft response. Deterministic Prompt 09 drafts remain available. Neither path
 updates ticket, alert, diagnostic, batch, or warehouse state automatically;
 governed content is only a human-reviewable artifact.
 
+## Runtime observability instrumentation
+
+Prompt 12 adds `app/core/correlation.py`,
+`app/middleware/runtime_observability.py`,
+`app/services/runtime_observability_service.py`,
+`app/schemas/runtime_observability.py`, and
+`app/api/routes/runtime_observability.py`. The middleware assigns or preserves
+request and correlation IDs, generates a runtime trace ID, and returns all
+three identifiers in response headers. It records the completed request into
+the existing `obs_traces`, `obs_spans`, `obs_log_events`, and
+`obs_metric_samples` tables without capturing request bodies or secrets.
+
+Runtime request flow:
+
+```text
+Request IDs → FastAPI middleware → HTTP trace/span → request logs + metrics
+            → PostgreSQL observability tables → runtime read APIs/UI
+```
+
+Slow requests are marked `DEGRADED`/`SLOW` using the configured threshold;
+errors are marked `ERROR` and receive error logs/metrics. Telemetry failures
+are isolated and logged so they cannot fail the original request. The runtime
+health probe creates a separate deterministic trace containing PostgreSQL and
+Redis connectivity spans and probe metrics.
+
+This complements Prompt 07 simulated evidence: Prompt 07 creates controlled
+business scenarios and diagnosis evidence, while Prompt 12 records real EOS
+backend request execution metadata. The dedicated runtime APIs and UI expose
+that data without replacing `/api/v1/observability/*`.
+
 ## Warehouse domain
 
 The warehouse domain uses PostgreSQL tables prefixed with `wf_`: warehouses,
@@ -266,18 +296,20 @@ returns, replenishment, wave planning, inventory adjustment approval,
 shipment rating, carrier integrations, real scheduling, async batch workers,
 batch retry orchestration, external file transfer, external ITSM connectors,
 notifications, ticket analytics, anomaly detection, root-cause
-inference, real OpenTelemetry export, Tempo, Loki, Prometheus scraping,
-Grafana dashboards, LLM summaries, agent orchestration, AI-native diagnosis,
-governed external LLM execution, and autonomous remediation are deferred.
-Synthetic journey runs, monitoring alerts, and simulated observability evidence are stored for
-audit, but no browser automation, external observability export, batch
-execution, or autonomous diagnosis is performed by this module.
+inference, real OpenTelemetry SDK/export, Tempo, Loki, Prometheus scraping,
+Grafana dashboards, collector trace/log pipelines, distributed tracing,
+browser telemetry, external observability SaaS integration, LLM summaries,
+agent orchestration, AI-native diagnosis, governed external LLM execution,
+and autonomous remediation are deferred. Synthetic journey runs, monitoring
+alerts, simulated observability evidence, and runtime request telemetry are
+stored for audit, but no browser automation, external observability export,
+batch execution, or autonomous diagnosis is performed by this module.
 
 ## Next phase
 
 The next phase can extend the controlled workflow with additional warehouse
 operations and supportability data. Real external LLM/provider SDK
 integration, streaming, LangGraph/LiteLLM, RAG, embeddings/vector storage,
-tool execution, runtime observability instrumentation, local observability
-stack expansion, AI classification, ticket analytics, agentic behavior, and
-autonomous resolution remain out of scope for Prompt 11.
+tool execution, local observability-stack expansion, distributed tracing,
+browser telemetry, AI classification, ticket analytics, agentic behavior, and
+autonomous resolution remain out of scope for Prompt 12.

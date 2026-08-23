@@ -56,9 +56,9 @@ def _trace_response(db: Session, trace: ObsTrace, include_children: bool = False
     )
 
 
-def create_trace(db: Session, *, trace_name: str, trace_type: str, status: str, source_module: str, summary: str, linked_alert_id: UUID | None = None, linked_triage_case_id: UUID | None = None, linked_ticket_id: UUID | None = None, root_entity_type: str | None = None, root_entity_id: UUID | None = None, root_reference: str | None = None, started_at: datetime | None = None, duration_ms: int | None = None) -> ObsTrace:
+def create_trace(db: Session, *, trace_name: str, trace_type: str, status: str, source_module: str, summary: str, linked_alert_id: UUID | None = None, linked_triage_case_id: UUID | None = None, linked_ticket_id: UUID | None = None, root_entity_type: str | None = None, root_entity_id: UUID | None = None, root_reference: str | None = None, started_at: datetime | None = None, duration_ms: int | None = None, trace_identifier: str | None = None) -> ObsTrace:
     started = started_at or _now()
-    trace = ObsTrace(trace_id=f"trace-{started:%Y%m%d%H%M%S}-{uuid4().hex[:10]}", trace_name=trace_name, trace_type=trace_type, status=status, source_module=source_module, root_entity_type=root_entity_type, root_entity_id=root_entity_id, root_reference=root_reference, linked_alert_id=linked_alert_id, linked_triage_case_id=linked_triage_case_id, linked_ticket_id=linked_ticket_id, started_at=started, ended_at=started + timedelta(milliseconds=duration_ms) if duration_ms is not None else None, duration_ms=duration_ms, summary=summary, created_at=_now(), updated_at=_now())
+    trace = ObsTrace(trace_id=trace_identifier or f"trace-{started:%Y%m%d%H%M%S}-{uuid4().hex[:10]}", trace_name=trace_name, trace_type=trace_type, status=status, source_module=source_module, root_entity_type=root_entity_type, root_entity_id=root_entity_id, root_reference=root_reference, linked_alert_id=linked_alert_id, linked_triage_case_id=linked_triage_case_id, linked_ticket_id=linked_ticket_id, started_at=started, ended_at=started + timedelta(milliseconds=duration_ms) if duration_ms is not None else None, duration_ms=duration_ms, summary=summary, created_at=_now(), updated_at=_now())
     db.add(trace)
     db.flush()
     return trace

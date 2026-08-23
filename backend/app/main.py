@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestIDMiddleware
+from app.middleware.runtime_observability import RuntimeObservabilityMiddleware
 from app.db.session import DatabaseManager
 from app.services.redis import RedisManager
 from app.telemetry import initialize_telemetry, shutdown_telemetry
@@ -32,6 +33,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     # Resource creation is intentionally lazy. Health checks determine whether
     # external services are reachable without preventing the API from starting.
     application.state.database.initialize()
+    application.state.runtime_observability_session_factory = application.state.database.session_factory
     await application.state.redis.connect()
     initialize_telemetry(settings)
 
@@ -58,5 +60,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RuntimeObservabilityMiddleware)
 app.include_router(router)
 register_exception_handlers(app)

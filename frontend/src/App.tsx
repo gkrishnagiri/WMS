@@ -13,6 +13,7 @@ import { BatchJobDetailPage, BatchJobsPage, BatchRunDetailPage, BatchRunsPage, B
 import { MonitoringAlertsPage, MonitoringSimulationsPage, MonitoringTriageDetailPage, MonitoringTriagePage } from "./pages/MonitoringPages";
 import { CopilotAnalyzePage, CopilotOverviewPage, CopilotSessionDetailPage, CopilotSessionsPage } from "./pages/CopilotPages";
 import { AiConfigOverviewPage, AiInvocationsPage, AiPromptsPage, AiProvidersPage, AiSafetyPage, AiTestPage, AiUsagePage } from "./pages/AIConfigPages";
+import { RuntimeObservabilityOverviewPage, RuntimeTraceDetailPage, RuntimeTracesPage } from "./pages/RuntimeObservabilityPages";
 
 export default function App() {
   return (
@@ -66,6 +67,9 @@ export default function App() {
         <Route path="/ai-config/invocations" element={<AiInvocationsPage />} />
         <Route path="/ai-config/usage" element={<AiUsagePage />} />
         <Route path="/ai-config/test" element={<AiTestPage />} />
+        <Route path="/observability/runtime" element={<RuntimeObservabilityOverviewPage />} />
+        <Route path="/observability/runtime/traces" element={<RuntimeTracesPage />} />
+        <Route path="/observability/runtime/traces/:traceId" element={<RuntimeTraceDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

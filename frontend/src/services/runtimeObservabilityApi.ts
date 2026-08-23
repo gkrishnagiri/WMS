@@ -1,0 +1,19 @@
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8050").replace(/\/$/, "");
+
+export interface RuntimeSummary { runtime_traces: number; successful_requests: number; degraded_requests: number; error_requests: number; average_latency_ms: number; max_latency_ms: number; slow_request_threshold_ms: number; runtime_logs: number; runtime_metric_samples: number; last_runtime_trace_at: string | null; }
+export interface RuntimeSpan { id: string; span_id: string; parent_span_id: string | null; span_name: string; service_name: string; component_code: string | null; operation_type: string; status: string; started_at: string; ended_at: string | null; duration_ms: number | null; error_type: string | null; error_message: string | null; attributes: Record<string, unknown> | null; }
+export interface RuntimeLog { id: string; log_number: string; trace_id: string | null; span_id: string | null; level: string; logger_name: string; message: string; event_type: string; source_module: string; component_code: string | null; entity_type: string | null; entity_id: string | null; linked_alert_id: string | null; linked_ticket_id: string | null; context: Record<string, unknown> | null; logged_at: string; created_at: string; }
+export interface RuntimeMetric { id: string; sample_number: string; metric_name: string; metric_value: number; metric_unit: string; component_code: string | null; severity: string | null; trace_id: string | null; linked_alert_id: string | null; recorded_at: string; attributes: Record<string, unknown> | null; created_at: string; }
+export interface RuntimeTrace { id: string; trace_id: string; trace_name: string; trace_type: string; status: string; source_module: string; root_entity_type: string | null; root_entity_id: string | null; root_reference: string | null; linked_alert_id: string | null; linked_triage_case_id: string | null; linked_ticket_id: string | null; started_at: string; ended_at: string | null; duration_ms: number | null; summary: string; spans: RuntimeSpan[]; logs: RuntimeLog[]; metrics: RuntimeMetric[]; }
+export interface RuntimeTraceDetail extends RuntimeTrace { request_id: string | null; correlation_id: string | null; traceparent: string | null; }
+export interface RuntimeProbe { status: string; trace_id: string; trace_identifier: string; database_status: string; redis_status: string; duration_ms: number; db_latency_ms: number; redis_latency_ms: number; }
+
+let browserCorrelationId: string | null = null;
+function correlationId() { if (!browserCorrelationId) browserCorrelationId = globalThis.crypto?.randomUUID?.() || `browser-${Date.now()}`; return browserCorrelationId; }
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> { const requestId = globalThis.crypto?.randomUUID?.() || `request-${Date.now()}`; const response = await fetch(apiBaseUrl + path, { ...options, headers: { "Content-Type": "application/json", "X-Request-ID": requestId, "X-Correlation-ID": correlationId(), ...(options.headers || {}) } }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(`Runtime observability API returned ${response.status}: ${typeof body === "object" && body?.detail ? body.detail : "request failed"}`); return body as T; }
+export const getRuntimeSummary = () => request<RuntimeSummary>("/api/v1/runtime-observability/summary");
+export const getRuntimeTraces = () => request<RuntimeTrace[]>("/api/v1/runtime-observability/traces");
+export const getRuntimeTraceDetail = (id: string) => request<RuntimeTraceDetail>(`/api/v1/runtime-observability/traces/${id}`);
+export const getRuntimeLogs = () => request<RuntimeLog[]>("/api/v1/runtime-observability/logs");
+export const getRuntimeMetrics = () => request<RuntimeMetric[]>("/api/v1/runtime-observability/metrics");
+export const runBackendHealthProbe = () => request<RuntimeProbe>("/api/v1/runtime-observability/probes/backend-health", { method: "POST", body: "{}" });

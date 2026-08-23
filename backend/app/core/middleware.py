@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
-import uuid
 
+from app.core.correlation import ensure_request_context
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -18,8 +18,8 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         self.header_name = header_name
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        request_id = request.headers.get(self.header_name) or str(uuid.uuid4())
-        request.state.request_id = request_id
+        context = ensure_request_context(request, self.header_name)
+        request_id = context["request_id"]
         try:
             response = await call_next(request)
         except Exception:
@@ -29,6 +29,8 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             )
             raise
         response.headers[self.header_name] = request_id
+        response.headers["X-Correlation-ID"] = context["correlation_id"]
+        response.headers["X-EOS-Runtime-Trace-ID"] = context["runtime_trace_id"]
         logger.info(
             "Request completed",
             extra={

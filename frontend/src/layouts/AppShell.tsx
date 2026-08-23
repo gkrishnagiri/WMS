@@ -52,6 +52,8 @@ const navigation = [
   { label: "AI Config", path: "/ai-config" },
   { label: "AI Invocations", path: "/ai-config/invocations" },
   { label: "AI Safety", path: "/ai-config/safety" },
+  { label: "Runtime Observability", path: "/observability/runtime" },
+  { label: "Runtime Traces", path: "/observability/runtime/traces" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];

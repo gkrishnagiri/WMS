@@ -38,6 +38,11 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
     request_id_header: str = "X-Request-ID"
+    runtime_observability_enabled: bool = True
+    runtime_observability_capture_requests: bool = True
+    runtime_observability_capture_health: bool = False
+    runtime_observability_slow_request_ms: int = 1000
+    runtime_observability_body_capture_chars: int = 0
 
     @property
     def database_url(self) -> str:

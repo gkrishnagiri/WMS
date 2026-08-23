@@ -618,3 +618,72 @@ Real external LLM calls, streaming, LangGraph, LiteLLM, RAG,
 embeddings/vector stores, autonomous remediation, external notifications,
 ServiceNow integration, runtime observability instrumentation, and local
 observability-stack expansion remain deferred.
+
+## Prompt 12 runtime observability instrumentation
+
+Runtime observability now captures actual EOS backend request telemetry into the
+existing Prompt 07 PostgreSQL observability tables. This is distinct from the
+deterministic scenario evidence: captured API requests create runtime traces,
+HTTP spans, structured request logs, latency/request/error metric samples, and
+correlation metadata.
+
+The runtime flow is:
+
+```text
+HTTP request → request/correlation/runtime trace IDs → API execution
+            → obs_traces + obs_spans + obs_log_events + obs_metric_samples
+            → response correlation headers
+```
+
+Incoming `X-Request-ID`, `X-Correlation-ID`, and `traceparent` values are read
+when present. Missing IDs are generated, stored on request state, and returned
+as `X-Request-ID`, `X-Correlation-ID`, and `X-EOS-Runtime-Trace-ID`. Request
+bodies, authorization headers, cookies, credentials, and environment values
+are not captured. Documentation, OpenAPI, static, favicon, and health paths
+are excluded by default from persistence.
+
+The backend health probe at
+`POST /api/v1/runtime-observability/probes/backend-health` performs actual
+PostgreSQL and Redis connectivity checks without changing business data. It
+persists a probe trace with backend, PostgreSQL, and Redis spans, structured
+probe logs, and probe latency metrics.
+
+Runtime APIs are available under `/api/v1/runtime-observability`:
+
+- `GET /summary`
+- `GET /traces`
+- `GET /traces/{trace_id}`
+- `GET /logs`
+- `GET /metrics`
+- `POST /probes/backend-health`
+
+Runtime frontend routes are:
+
+- `/observability/runtime`
+- `/observability/runtime/traces`
+- `/observability/runtime/traces/:traceId`
+
+The backend remains on port `8050` and the frontend remains on port `4001`.
+
+## Prompt 12 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+python -m app.db.seed_copilot
+python -m app.db.seed_ai_config
+pytest
+
+cd ../frontend
+npm run build
+```
+
+OpenTelemetry SDK/export, Tempo, Loki, Grafana dashboards, collector
+trace/log pipelines, distributed tracing across services, browser telemetry,
+Prometheus scraping changes, external observability SaaS integration, and AI
+diagnosis changes remain deferred to later phases.
