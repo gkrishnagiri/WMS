@@ -322,6 +322,37 @@ available through their original PostgreSQL APIs. Tempo, Loki, and Prometheus
 are external local stores for exported telemetry, not replacements for the
 `obs_*` tables.
 
+## Experience segregation
+
+Prompt 14 keeps one React/Vite codebase and one shared FastAPI backend while
+separating the browser experience model. `VITE_EOS_EXPERIENCE` selects one of
+`full`, `business`, `operations`, `simulation`, `observability`, or `agentic`.
+The centralized registry in `frontend/src/config/experience.ts` owns display
+metadata, route ownership, specialized landing content, and local stack links;
+`frontend/src/config/navigation.ts` owns the filtered sidebar registry.
+
+The shell applies light route-boundary handling: a route outside the current
+experience displays a friendly explanation and a link to the owning browser
+port. This is not a security boundary. The full integrated UI remains on
+`4001`, while specialized modes use `4011` through `4015`:
+
+```text
+Business Application        :4011 → warehouse and fulfillment pages
+Operations Console          :4012 → exceptions, tickets, alerts, triage, support
+Simulation Lab              :4013 → synthetic, batch, monitoring, and test controls
+Observability Control Plane :4014 → runtime evidence and local stack controls
+Agentic Support Console     :4015 → copilot and governed AI configuration
+```
+
+Each mode reuses the existing page components and API clients. The mode
+startup wrappers set the experience code, shared API URL (`8050`), and Vite
+port; they do not start additional backend services. The observability control
+plane links to Grafana as the primary UI and exposes only EOS helper views.
+
+This is intentionally frontend-first. Prompt 15 is the next boundary where
+separate backend/BFF ownership can be introduced without changing the current
+shared API contract.
+
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,

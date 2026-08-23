@@ -1,0 +1,48 @@
+Fix Prompt 14 experience frontend API failures.
+
+Issue:
+- Original frontend on http://localhost:4001 works.
+- New Prompt 14 experience frontends on ports 4011, 4012, 4013, 4014, and 4015 open their homepages but fail when fetching backend data.
+- Backend is running on http://localhost:8050.
+- Docker stack is running.
+- This is likely because backend CORS only allows the original frontend origin.
+
+Tasks:
+1. Update backend CORS allowed origins to include all local experience frontend origins:
+   - http://localhost:4001
+   - http://127.0.0.1:4001
+   - http://localhost:4011
+   - http://127.0.0.1:4011
+   - http://localhost:4012
+   - http://127.0.0.1:4012
+   - http://localhost:4013
+   - http://127.0.0.1:4013
+   - http://localhost:4014
+   - http://127.0.0.1:4014
+   - http://localhost:4015
+   - http://127.0.0.1:4015
+
+2. Update backend/.env.example if CORS origins are configured there.
+   Do not modify backend/.env.
+
+3. Confirm each frontend startup script sets:
+   VITE_API_BASE_URL=http://localhost:8050
+   VITE_EOS_EXPERIENCE=<correct mode>
+
+4. Add or update backend tests to verify CORS preflight succeeds for at least:
+   - http://localhost:4001
+   - http://localhost:4011
+   - http://localhost:4012
+   - http://localhost:4013
+   - http://localhost:4014
+   - http://localhost:4015
+
+5. Do not modify docker-compose.yml.
+6. Do not modify observability infrastructure.
+7. Do not introduce authentication, ServiceNow, external LLMs, or new backend services.
+
+Validation:
+- Run backend tests.
+- Run frontend build.
+- Restart backend.
+- Validate CORS using OPTIONS requests for ports 4011 through 4015.

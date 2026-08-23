@@ -757,3 +757,77 @@ npm run build
 Production sampling policy, remote SaaS export, browser RUM, multi-service
 distributed tracing, Prometheus alert rules, Grafana alerting, ServiceNow,
 AI-driven remediation, and cloud integrations remain deferred.
+
+## Prompt 14 experience segregation
+
+Prompt 14 adds frontend experience segregation without splitting the shared
+FastAPI backend. The same React/Vite codebase is launched with
+`VITE_EOS_EXPERIENCE`, so the integrated full demo remains available while
+specialized browser windows expose focused navigation and landing pages:
+
+| Experience | URL | Purpose |
+| --- | --- | --- |
+| Full | `http://localhost:4001` | Integrated EOS demo UI |
+| Business | `http://localhost:4011` | Warehouse and fulfillment application |
+| Operations | `http://localhost:4012` | AMS and support operations console |
+| Simulation | `http://localhost:4013` | Synthetic users and fault-injection lab |
+| Observability | `http://localhost:4014` | Runtime telemetry and local stack control plane |
+| Agentic | `http://localhost:4015` | Copilot and governed AI support console |
+
+Experience navigation is centralized in `frontend/src/config/navigation.ts`
+and mode metadata is in `frontend/src/config/experience.ts`. Direct access to
+a route owned by another experience shows a friendly experience-boundary page;
+this is demo navigation segregation, not authentication or authorization.
+
+Start a mode with the provided scripts:
+
+```bash
+cd frontend
+./start_full_frontend.sh          # 4001
+./start_business_frontend.sh      # 4011
+./start_operations_frontend.sh    # 4012
+./start_simulation_frontend.sh    # 4013
+./start_observability_frontend.sh # 4014
+./start_agentic_frontend.sh       # 4015
+```
+
+Each script sets `VITE_EOS_EXPERIENCE` and defaults the shared API URL to
+`http://localhost:8050`. The backend remains shared on port `8050`; no new
+backend service or Docker Compose change is required for Prompt 14.
+
+Experience-specific route groups are:
+
+- Business: `/warehouse`, `/warehouse/inventory`, `/warehouse/orders`,
+  `/warehouse/tasks`, `/warehouse/shipments`, `/warehouse/inventory-transactions`,
+  `/health`, and `/about`
+- Operations: `/operations/exceptions`, `/ams/tickets`, `/ams/user-reports`,
+  `/monitoring/alerts`, `/monitoring/triage`, `/batch/runs`,
+  `/observability/diagnostics`, and `/copilot/sessions`
+- Simulation: `/synthetic-users/*`, `/batch/jobs`, `/batch/runs`,
+  `/batch/simulations`, `/monitoring/simulations`,
+  `/observability/simulations`, and `/observability/stack/test`
+- Observability: `/observability/*`, including runtime views, stack health,
+  tests, dashboards, traces, logs, metrics, and diagnostics
+- Agentic: `/copilot/*`, `/ai-config/*`, and the future `/agentic` placeholder
+
+Prompt 14 deliberately does not split backend services. Prompt 15 can add
+backend/BFF boundaries after the URL and screen model is proven. Future Azure
+deployment may use Azure Monitor/Application Insights/Log Analytics (with
+Managed Grafana if desired), or the open-source Grafana/Prometheus/Tempo/Loki/
+OpenTelemetry stack. Open-source components may avoid license fees, but Azure
+compute, storage, networking, and managed services still have infrastructure
+costs. No final production choice is made here.
+
+## Prompt 14 validation
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+The mode scripts can then be opened at ports `4001`, `4011`, `4012`, `4013`,
+`4014`, and `4015`. Existing backend APIs, the full UI, and the Prompt 13
+observability stack remain unchanged. Backend boundary/BFF segregation,
+authentication, authorization, and production deployment topology are
+deferred.

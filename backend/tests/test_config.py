@@ -1,4 +1,4 @@
-from app.core.config import Settings
+from app.core.config import LOCAL_FRONTEND_CORS_ORIGINS, Settings
 
 
 def test_configuration_defaults_are_local_development_safe(monkeypatch):
@@ -21,4 +21,5 @@ def test_configuration_reads_environment(monkeypatch):
     settings = Settings()
     assert settings.app_name == "Test EOS"
     assert settings.app_port == 9000
-    assert settings.cors_origins == ["http://one.test", "http://two.test"]
+    assert settings.cors_origins[:2] == ["http://one.test", "http://two.test"]
+    assert all(origin in settings.cors_origins for origin in LOCAL_FRONTEND_CORS_ORIGINS)

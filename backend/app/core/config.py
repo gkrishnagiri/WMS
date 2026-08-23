@@ -8,6 +8,22 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+LOCAL_FRONTEND_CORS_ORIGINS = (
+    "http://localhost:4001",
+    "http://127.0.0.1:4001",
+    "http://localhost:4011",
+    "http://127.0.0.1:4011",
+    "http://localhost:4012",
+    "http://127.0.0.1:4012",
+    "http://localhost:4013",
+    "http://127.0.0.1:4013",
+    "http://localhost:4014",
+    "http://127.0.0.1:4014",
+    "http://localhost:4015",
+    "http://127.0.0.1:4015",
+)
+
+
 class Settings(BaseSettings):
     """Environment-backed settings for the EOS API."""
 
@@ -24,7 +40,7 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", validation_alias="APP_ENV")
     app_host: str = "0.0.0.0"
     app_port: int = 8050
-    backend_cors_origins: str = "http://localhost:4001,http://127.0.0.1:4001"
+    backend_cors_origins: str = ",".join(LOCAL_FRONTEND_CORS_ORIGINS)
 
     database_host: str = "localhost"
     database_port: int = 15432
@@ -75,7 +91,8 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.backend_cors_origins.split(",") if origin.strip()]
+        configured_origins = [origin.strip() for origin in self.backend_cors_origins.split(",") if origin.strip()]
+        return list(dict.fromkeys([*configured_origins, *LOCAL_FRONTEND_CORS_ORIGINS]))
 
 
 @lru_cache

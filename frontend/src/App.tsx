@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./layouts/AppShell";
 import { AboutPage } from "./pages/AboutPage";
-import { DashboardPage } from "./pages/DashboardPage";
 import { HealthPage } from "./pages/HealthPage";
 import { InventoryPage, OrdersPage, ShipmentsPage, TasksPage, WarehousePage } from "./pages/WarehousePages";
 import { CreateOrderPage, InventoryTransactionsPage, OrderDetailPage, WorkflowTasksPage } from "./pages/WarehouseWorkflowPages";
@@ -15,12 +14,13 @@ import { CopilotAnalyzePage, CopilotOverviewPage, CopilotSessionDetailPage, Copi
 import { AiConfigOverviewPage, AiInvocationsPage, AiPromptsPage, AiProvidersPage, AiSafetyPage, AiTestPage, AiUsagePage } from "./pages/AIConfigPages";
 import { RuntimeObservabilityOverviewPage, RuntimeTraceDetailPage, RuntimeTracesPage } from "./pages/RuntimeObservabilityPages";
 import { ObservabilityDashboardsPage, ObservabilityStackHealthPage, ObservabilityStackOverviewPage, ObservabilityStackTestPage } from "./pages/ObservabilityStackPages";
+import { ExperienceRootPage } from "./pages/ExperienceHomePage";
 
 export default function App() {
   return (
     <AppShell>
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<ExperienceRootPage />} />
         <Route path="/health" element={<HealthPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/warehouse" element={<WarehousePage />} />
