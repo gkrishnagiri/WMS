@@ -1,0 +1,19 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {"type": "stat", "title": "API Request Count", "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}, "targets": [{"expr": "sum(eos_api_request_count_total)", "refId": "A"}]},
+    {"type": "timeseries", "title": "API Latency", "gridPos": {"h": 8, "w": 12, "x": 6, "y": 0}, "targets": [{"expr": "eos_api_latency_ms_bucket", "refId": "A"}]},
+    {"type": "stat", "title": "API Error Count", "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}, "targets": [{"expr": "sum(eos_api_error_count_total)", "refId": "A"}]},
+    {"type": "logs", "title": "Recent EOS Logs", "gridPos": {"h": 10, "w": 14, "x": 0, "y": 8}, "datasource": {"type": "loki", "name": "Loki"}, "targets": [{"expr": "{service_name=\"eos-backend\"}", "refId": "A"}]},
+    {"type": "text", "title": "Trace Search", "gridPos": {"h": 10, "w": 10, "x": 14, "y": 8}, "options": {"mode": "markdown", "content": "Use the **Tempo** data source to search EOS runtime traces. Request and correlation IDs are recorded as span attributes."}}
+  ],
+  "schemaVersion": 39,
+  "tags": ["eos", "runtime-observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "title": "EOS Runtime Observability",
+  "uid": "eos-runtime-observability",
+  "version": 1
+}

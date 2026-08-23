@@ -1,8 +1,8 @@
-"""Safe observability extension points.
+"""Legacy application telemetry hooks.
 
-OpenTelemetry instrumentation is intentionally deferred until application
-traces are introduced in a later phase. The hooks here keep startup/shutdown
-integration stable without requiring an OpenTelemetry SDK dependency today.
+Prompt 13's optional OpenTelemetry SDK setup lives in
+``app.core.opentelemetry``; these hooks remain for the existing application
+startup contract.
 """
 
 from __future__ import annotations
@@ -15,11 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 def initialize_telemetry(settings: Settings) -> None:
-    """Prepare future telemetry integrations without changing infrastructure."""
-    # TODO: add application metrics/tracing exporters in the observability phase.
+    """Keep the original telemetry startup hook stable."""
     logger.debug("Telemetry hooks initialized for %s", settings.app_name)
 
 
 def shutdown_telemetry() -> None:
-    """Placeholder for future telemetry provider shutdown."""
-    # TODO: flush and close telemetry providers when instrumentation is added.
+    """Keep the original telemetry shutdown hook stable."""

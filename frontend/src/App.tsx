@@ -14,6 +14,7 @@ import { MonitoringAlertsPage, MonitoringSimulationsPage, MonitoringTriageDetail
 import { CopilotAnalyzePage, CopilotOverviewPage, CopilotSessionDetailPage, CopilotSessionsPage } from "./pages/CopilotPages";
 import { AiConfigOverviewPage, AiInvocationsPage, AiPromptsPage, AiProvidersPage, AiSafetyPage, AiTestPage, AiUsagePage } from "./pages/AIConfigPages";
 import { RuntimeObservabilityOverviewPage, RuntimeTraceDetailPage, RuntimeTracesPage } from "./pages/RuntimeObservabilityPages";
+import { ObservabilityDashboardsPage, ObservabilityStackHealthPage, ObservabilityStackOverviewPage, ObservabilityStackTestPage } from "./pages/ObservabilityStackPages";
 
 export default function App() {
   return (
@@ -70,6 +71,10 @@ export default function App() {
         <Route path="/observability/runtime" element={<RuntimeObservabilityOverviewPage />} />
         <Route path="/observability/runtime/traces" element={<RuntimeTracesPage />} />
         <Route path="/observability/runtime/traces/:traceId" element={<RuntimeTraceDetailPage />} />
+        <Route path="/observability/stack" element={<ObservabilityStackOverviewPage />} />
+        <Route path="/observability/stack/health" element={<ObservabilityStackHealthPage />} />
+        <Route path="/observability/stack/test" element={<ObservabilityStackTestPage />} />
+        <Route path="/observability/dashboards" element={<ObservabilityDashboardsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

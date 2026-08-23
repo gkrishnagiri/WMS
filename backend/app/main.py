@@ -15,9 +15,11 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestIDMiddleware
 from app.middleware.runtime_observability import RuntimeObservabilityMiddleware
+from app.middleware.opentelemetry_runtime import OpenTelemetryRuntimeMiddleware
 from app.db.session import DatabaseManager
 from app.services.redis import RedisManager
 from app.telemetry import initialize_telemetry, shutdown_telemetry
+from app.core.opentelemetry import initialize_opentelemetry, shutdown_opentelemetry
 
 
 @asynccontextmanager
@@ -36,6 +38,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     application.state.runtime_observability_session_factory = application.state.database.session_factory
     await application.state.redis.connect()
     initialize_telemetry(settings)
+    initialize_opentelemetry(application, settings)
 
     try:
         yield
@@ -43,6 +46,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         await application.state.redis.disconnect()
         application.state.database.dispose()
         shutdown_telemetry()
+        shutdown_opentelemetry()
 
 
 settings = get_settings()
@@ -61,5 +65,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(RuntimeObservabilityMiddleware)
+app.add_middleware(OpenTelemetryRuntimeMiddleware)
 app.include_router(router)
 register_exception_handlers(app)

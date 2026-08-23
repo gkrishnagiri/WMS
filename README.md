@@ -687,3 +687,73 @@ OpenTelemetry SDK/export, Tempo, Loki, Grafana dashboards, collector
 trace/log pipelines, distributed tracing across services, browser telemetry,
 Prometheus scraping changes, external observability SaaS integration, and AI
 diagnosis changes remain deferred to later phases.
+
+## Prompt 13 local observability stack expansion
+
+Prompt 13 adds a local external observability stack alongside the Prompt 12
+PostgreSQL runtime telemetry. EOS exports OpenTelemetry traces, logs, and
+metrics to the Collector, which routes them to Tempo, Loki, and Prometheus;
+Grafana provisions those data sources and two demo dashboards. Tempo and Loki
+use local Docker volumes and are not external SaaS services.
+
+The backend uses the official OpenTelemetry Python API/SDK and OTLP exporters.
+Instrumentation is opt-in with `OTEL_ENABLED=true`, remains safe when the
+Collector is unavailable, and adds `X-EOS-OTEL-Trace-ID` while preserving all
+Prompt 12 request/correlation headers. A lightweight application middleware
+creates request spans and metrics; structured application logs are bridged to
+OTLP when the installed SDK supports it. No request bodies, credentials,
+authorization headers, or cookies are exported.
+
+Start the local stack with:
+
+```bash
+docker compose config
+docker compose up -d
+docker compose ps
+```
+
+Start the backend with local export enabled without editing `backend/.env`:
+
+```bash
+cd backend
+source .venv/bin/activate
+OTEL_ENABLED=true OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 ./start_backend.sh
+```
+
+Stack APIs are available under `/api/v1/observability-stack`:
+
+- `GET /summary`, `GET /health`, and `GET /config`
+- `POST /test-span`, `POST /test-log`, `POST /test-metric`, and `POST /test-all`
+
+Runtime stack frontend routes are:
+
+- `/observability/stack`
+- `/observability/stack/health`
+- `/observability/stack/test`
+- `/observability/dashboards`
+
+The local service ports remain: backend `8050`, frontend `4001`, PostgreSQL
+`15432`, Redis `6379`, Prometheus `9090`, Grafana `3001`, Collector OTLP
+`4317`/`4318`, Tempo `3200`, and Loki `3100`.
+
+## Prompt 13 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+python -m app.db.seed_copilot
+python -m app.db.seed_ai_config
+pytest
+
+cd ../frontend
+npm run build
+```
+
+Production sampling policy, remote SaaS export, browser RUM, multi-service
+distributed tracing, Prometheus alert rules, Grafana alerting, ServiceNow,
+AI-driven remediation, and cloud integrations remain deferred.

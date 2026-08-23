@@ -7,6 +7,7 @@ import asyncio
 from redis.asyncio import Redis
 
 from app.core.config import Settings
+from app.core.opentelemetry import start_span
 
 
 class RedisManager:
@@ -25,18 +26,25 @@ class RedisManager:
     async def ping(self) -> bool:
         if self.client is None:
             return False
-        try:
-            # A short socket preflight keeps the health endpoint deterministic
-            # when the host-mapped Redis service is not running.
-            _, writer = await asyncio.wait_for(
-                asyncio.open_connection(self.settings.redis_host, self.settings.redis_port),
-                timeout=1.0,
-            )
-            writer.close()
-            await writer.wait_closed()
-            return bool(await asyncio.wait_for(self.client.ping(), timeout=1.5))
-        except Exception:
-            return False
+        with start_span("Redis connectivity check", **{"db.system": "redis", "db.operation": "PING"}) as span:
+            try:
+                # A short socket preflight keeps the health endpoint deterministic
+                # when the host-mapped Redis service is not running.
+                _, writer = await asyncio.wait_for(
+                    asyncio.open_connection(self.settings.redis_host, self.settings.redis_port),
+                    timeout=1.0,
+                )
+                writer.close()
+                await writer.wait_closed()
+                result = bool(await asyncio.wait_for(self.client.ping(), timeout=1.5))
+                if span is not None:
+                    span.set_attribute("eos.check.status", "healthy" if result else "unhealthy")
+                return result
+            except Exception as error:
+                if span is not None:
+                    span.record_exception(error)
+                    span.set_attribute("eos.check.status", "unhealthy")
+                return False
 
     async def disconnect(self) -> None:
         if self.client is not None:

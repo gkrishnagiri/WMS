@@ -12,6 +12,7 @@ from starlette.responses import Response
 
 from app.core.correlation import ensure_request_context
 from app.services import runtime_observability_service
+from app.core import opentelemetry
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,9 @@ class RuntimeObservabilityMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = context["request_id"]
         response.headers["X-Correlation-ID"] = context["correlation_id"]
         response.headers["X-EOS-Runtime-Trace-ID"] = context["runtime_trace_id"]
+        otel_trace_id, _ = opentelemetry.current_ids()
+        if otel_trace_id:
+            response.headers["X-EOS-OTEL-Trace-ID"] = otel_trace_id
         return response
 
     @staticmethod
@@ -46,7 +50,8 @@ class RuntimeObservabilityMiddleware(BaseHTTPMiddleware):
         try:
             db = factory()
             duration_ms = max(0, int((perf_counter() - timer) * 1000))
-            runtime_observability_service.record_http_request_trace(db, method=request.method, path=request.url.path, status_code=status_code, duration_ms=duration_ms, started_at=started_at, request_id=context["request_id"], correlation_id=context["correlation_id"], runtime_trace_id=context["runtime_trace_id"], traceparent=context.get("traceparent"), client_host=request.client.host if request.client else None, error_message=error_message)
+            otel_trace_id, otel_span_id = opentelemetry.current_ids()
+            runtime_observability_service.record_http_request_trace(db, method=request.method, path=request.url.path, status_code=status_code, duration_ms=duration_ms, started_at=started_at, request_id=context["request_id"], correlation_id=context["correlation_id"], runtime_trace_id=context["runtime_trace_id"], traceparent=context.get("traceparent"), client_host=request.client.host if request.client else None, error_message=error_message, otel_trace_id=otel_trace_id, otel_span_id=otel_span_id)
             db.commit()
         except Exception:
             if db is not None:

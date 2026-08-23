@@ -1,0 +1,31 @@
+Prompt 13 follow-up fix: create missing root startup scripts.
+
+The project root currently has no scripts/ directory, but Prompt 13 validation expects:
+- scripts/start.sh
+- scripts/stop.sh
+
+Create a scripts/ directory with executable scripts:
+
+1. scripts/start.sh
+- validate Docker Compose config
+- start the full local infrastructure stack using docker compose up -d
+- print docker compose ps
+- do not require sudo
+- do not start the backend or frontend
+- do not modify runtime files
+
+2. scripts/stop.sh
+- stop the Docker Compose stack using docker compose down
+- do not remove volumes by default
+- do not require sudo
+
+Both scripts must be POSIX-compatible bash scripts with set -euo pipefail.
+They must run from any working directory by resolving the project root.
+Do not modify docker-compose.yml unless required.
+Do not modify backend/.env, frontend/.env, backend/.venv, frontend/node_modules, or frontend/dist.
+
+After creating scripts, run:
+chmod +x scripts/start.sh scripts/stop.sh
+docker compose config
+./scripts/start.sh
+docker compose ps

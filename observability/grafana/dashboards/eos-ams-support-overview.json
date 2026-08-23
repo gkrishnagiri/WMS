@@ -1,0 +1,18 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {"type": "timeseries", "title": "Support API Traffic", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}, "targets": [{"expr": "sum by (http_route) (rate(eos_api_request_count_total[5m]))", "refId": "A"}]},
+    {"type": "timeseries", "title": "API Errors", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}, "targets": [{"expr": "sum by (http_route) (rate(eos_api_error_count_total[5m]))", "refId": "A"}]},
+    {"type": "logs", "title": "Error Logs", "gridPos": {"h": 10, "w": 14, "x": 0, "y": 8}, "datasource": {"type": "loki", "name": "Loki"}, "targets": [{"expr": "{service_name=\"eos-backend\"} |= \"ERROR\"", "refId": "A"}]},
+    {"type": "text", "title": "Support Context", "gridPos": {"h": 10, "w": 10, "x": 14, "y": 8}, "options": {"mode": "markdown", "content": "This dashboard covers batch, copilot, AI configuration, and support API traffic. Use Tempo for request traces and Loki for structured logs."}}
+  ],
+  "schemaVersion": 39,
+  "tags": ["eos", "ams", "support"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "title": "EOS AMS Support Overview",
+  "uid": "eos-ams-support-overview",
+  "version": 1
+}

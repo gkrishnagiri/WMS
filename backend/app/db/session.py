@@ -12,6 +12,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings
+from app.core.opentelemetry import start_span
 
 
 def current_git_commit() -> str:
@@ -48,12 +49,18 @@ class DatabaseManager:
     def check_connection(self) -> bool:
         if self.engine is None:
             return False
-        try:
-            with self.engine.connect() as connection:
-                connection.execute(text("SELECT 1"))
-            return True
-        except Exception:
-            return False
+        with start_span("PostgreSQL connectivity check", **{"db.system": "postgresql", "db.operation": "SELECT 1"}) as span:
+            try:
+                with self.engine.connect() as connection:
+                    connection.execute(text("SELECT 1"))
+                if span is not None:
+                    span.set_attribute("eos.check.status", "healthy")
+                return True
+            except Exception as error:
+                if span is not None:
+                    span.record_exception(error)
+                    span.set_attribute("eos.check.status", "unhealthy")
+                return False
 
     def dispose(self) -> None:
         if self.engine is not None:

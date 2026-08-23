@@ -48,13 +48,15 @@ def record_http_request_trace(
     traceparent: str | None,
     client_host: str | None,
     error_message: str | None = None,
+    otel_trace_id: str | None = None,
+    otel_span_id: str | None = None,
 ) -> ObsTrace:
     is_error = status_code >= 400 or error_message is not None
     is_slow = duration_ms >= 1000
     trace_status = "ERROR" if is_error else "DEGRADED" if is_slow else "SUCCESS"
     span_status = "ERROR" if is_error else "SLOW" if is_slow else "OK"
     finished_at = _now()
-    attributes = {"method": method, "path": path, "status_code": status_code, "request_id": request_id, "correlation_id": correlation_id, "client_host": client_host, "traceparent": traceparent}
+    attributes = {"method": method, "path": path, "status_code": status_code, "request_id": request_id, "correlation_id": correlation_id, "client_host": client_host, "traceparent": traceparent, "otel_trace_id": otel_trace_id, "otel_span_id": otel_span_id}
     trace = observability_service.create_trace(db, trace_name=f"{method} {path}"[:200], trace_type="API_REQUEST", status=trace_status, source_module=RUNTIME_MODULE, root_entity_type="API_REQUEST", root_reference=f"{method} {path}"[:160], summary=f"Runtime backend request {method} {path} completed with status {status_code} in {duration_ms} ms.", started_at=started_at, duration_ms=duration_ms, trace_identifier=runtime_trace_id)
     span = observability_service.create_span(db, trace, span_id=f"span-{uuid4().hex}", span_name="HTTP request", service_name="eos-backend", component_code=RUNTIME_COMPONENT, operation_type="HTTP_REQUEST", status=span_status, started_at=started_at, duration_ms=duration_ms, error_type="HTTP_ERROR" if is_error else None, error_message=(error_message or f"HTTP {status_code}") if is_error else None, attributes=attributes)
     observability_service.create_log_event(db, message=f"Runtime request started: {method} {path}.", event_type="REQUEST_STARTED", level="INFO", logger_name="eos.runtime", source_module=RUNTIME_MODULE, trace_id=trace.id, span_id=span.id, component_code=RUNTIME_COMPONENT, context=attributes, logged_at=started_at)

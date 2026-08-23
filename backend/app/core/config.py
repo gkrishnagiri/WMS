@@ -43,6 +43,22 @@ class Settings(BaseSettings):
     runtime_observability_capture_health: bool = False
     runtime_observability_slow_request_ms: int = 1000
     runtime_observability_body_capture_chars: int = 0
+    otel_enabled: bool = False
+    otel_service_name: str = "eos-backend"
+    otel_service_namespace: str = "enterprise-operations-suite"
+    otel_service_version: str = "0.1.0"
+    otel_environment: str = "development"
+    otel_exporter_otlp_endpoint: str = "http://localhost:4317"
+    otel_exporter_otlp_protocol: str = "grpc"
+    otel_traces_enabled: bool = True
+    otel_logs_enabled: bool = True
+    otel_metrics_enabled: bool = True
+    otel_sample_ratio: float = 1.0
+    otel_collector_health_url: str = "http://localhost:13133"
+    otel_prometheus_url: str = "http://localhost:9090"
+    otel_grafana_url: str = "http://localhost:3001"
+    otel_tempo_url: str = "http://localhost:3200"
+    otel_loki_url: str = "http://localhost:3100"
 
     @property
     def database_url(self) -> str:

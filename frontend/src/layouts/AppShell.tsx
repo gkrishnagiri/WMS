@@ -54,6 +54,8 @@ const navigation = [
   { label: "AI Safety", path: "/ai-config/safety" },
   { label: "Runtime Observability", path: "/observability/runtime" },
   { label: "Runtime Traces", path: "/observability/runtime/traces" },
+  { label: "Observability Stack", path: "/observability/stack" },
+  { label: "Grafana Dashboards", path: "/observability/dashboards" },
   { label: "Health", path: "/health" },
   { label: "About", path: "/about" },
 ];

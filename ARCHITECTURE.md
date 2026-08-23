@@ -285,9 +285,42 @@ prevented.
 
 ## Infrastructure baseline
 
-The existing PostgreSQL, Redis, OpenTelemetry Collector, Prometheus, Loki,
-and Grafana baseline remains in `docker-compose.yml` and `observability/`.
-Those files are not part of the Phase 1 application changes.
+The local stack in `docker-compose.yml` includes PostgreSQL, Redis, the
+OpenTelemetry Collector, Prometheus, Grafana, Tempo, and Loki. Host ports are
+preserved: PostgreSQL `15432`, Redis `6379`, Prometheus `9090`, Grafana
+`3001`, Collector OTLP `4317`/`4318`, Tempo `3200`, and Loki `3100`.
+
+## Local observability stack
+
+Prompt 13 adds official OpenTelemetry Python SDK setup in
+`app/core/opentelemetry.py` and a lightweight runtime middleware in
+`app/middleware/opentelemetry_runtime.py`. It is opt-in via `OTEL_ENABLED` and
+does not replace Prompt 12's runtime request persistence. With export enabled,
+EOS creates request spans, API counters/histograms, and structured log records
+with `service.name`, runtime trace ID, request ID, and correlation ID context.
+The middleware preserves Prompt 12 headers and adds
+`X-EOS-OTEL-Trace-ID` when an active OTel span exists.
+
+The OTLP flow is:
+
+```text
+EOS FastAPI → OTLP Collector → traces: Tempo
+                         ├── logs: Loki
+                         └── metrics: Prometheus exporter → Prometheus → Grafana
+```
+
+The Collector keeps its existing Prometheus exporter and adds traces, logs,
+and metrics pipelines with debug exporters for local troubleshooting. Grafana
+provisions Prometheus, Loki, and Tempo data sources plus `EOS Runtime
+Observability` and `EOS AMS Support Overview` dashboards. The
+`/api/v1/observability-stack` APIs expose sanitized configuration, local
+service health, and deterministic span/log/metric test signals.
+
+This is deliberately a local single-backend integration. Prompt 07 simulated
+business observability evidence and Prompt 12 internal runtime telemetry stay
+available through their original PostgreSQL APIs. Tempo, Loki, and Prometheus
+are external local stores for exported telemetry, not replacements for the
+`obs_*` tables.
 
 ## Deferred items
 
@@ -302,8 +335,10 @@ browser telemetry, external observability SaaS integration, LLM summaries,
 agent orchestration, AI-native diagnosis, governed external LLM execution,
 and autonomous remediation are deferred. Synthetic journey runs, monitoring
 alerts, simulated observability evidence, and runtime request telemetry are
-stored for audit, but no browser automation, external observability export,
-batch execution, or autonomous diagnosis is performed by this module.
+stored for audit. Prompt 13 now provides local external export, but production
+sampling, remote observability SaaS, browser RUM, distributed multi-service
+tracing, Prometheus alert rules, Grafana alerting, ServiceNow integration, and
+AI-driven remediation remain deferred.
 
 ## Next phase
 
@@ -312,4 +347,4 @@ operations and supportability data. Real external LLM/provider SDK
 integration, streaming, LangGraph/LiteLLM, RAG, embeddings/vector storage,
 tool execution, local observability-stack expansion, distributed tracing,
 browser telemetry, AI classification, ticket analytics, agentic behavior, and
-autonomous resolution remain out of scope for Prompt 12.
+autonomous resolution remain out of scope for Prompt 13.
