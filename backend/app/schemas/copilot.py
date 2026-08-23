@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.ai_config import InvocationResponse
+
 
 class CopilotSafeActionResponse(BaseModel):
     id: UUID
@@ -102,9 +104,16 @@ class CopilotMessageResponse(BaseModel):
     status: str
     target_entity_type: str | None
     target_entity_id: UUID | None
+    ai_invocation_id: UUID | None = None
+    generation_mode: str | None = None
     created_by: str
     created_at: datetime
     updated_at: datetime
+
+
+class CopilotGovernedDraftResponse(BaseModel):
+    message: CopilotMessageResponse
+    invocation: InvocationResponse
 
 
 class CopilotActionEventResponse(BaseModel):
@@ -156,4 +165,3 @@ class CopilotSummary(BaseModel):
 
 class CopilotAnalyzeResponse(BaseModel):
     session: CopilotSessionResponse
-

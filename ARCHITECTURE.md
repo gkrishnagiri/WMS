@@ -169,6 +169,23 @@ local demo and no API keys or production credentials are stored. Disabled
 non-mock providers cannot be invoked. Prompt 09's deterministic copilot
 continues to operate independently; it is not replaced by an external model.
 
+Prompt 11 adds `app/services/copilot_ai_service.py` and governed endpoints to
+bridge copilot snapshots to the provider gateway. The service selects one of
+four task/template pairs, sends a bounded summary payload, stores the returned
+invocation ID and `GOVERNED_AI_MOCK` generation mode on a copilot message, and
+records the invocation under `COPILOT_SESSION` for audit and usage accounting.
+
+```text
+Copilot context snapshot → safety policy → mock provider
+                          → AI invocation audit + usage
+                          → reviewable copilot draft
+```
+
+Blocked safety requests produce an audited blocked message without a normal
+draft response. Deterministic Prompt 09 drafts remain available. Neither path
+updates ticket, alert, diagnostic, batch, or warehouse state automatically;
+governed content is only a human-reviewable artifact.
+
 ## Warehouse domain
 
 The warehouse domain uses PostgreSQL tables prefixed with `wf_`: warehouses,
@@ -252,8 +269,7 @@ notifications, ticket analytics, anomaly detection, root-cause
 inference, real OpenTelemetry export, Tempo, Loki, Prometheus scraping,
 Grafana dashboards, LLM summaries, agent orchestration, AI-native diagnosis,
 governed external LLM execution, and autonomous remediation are deferred.
-Synthetic journey
-runs, monitoring alerts, and simulated observability evidence are stored for
+Synthetic journey runs, monitoring alerts, and simulated observability evidence are stored for
 audit, but no browser automation, external observability export, batch
 execution, or autonomous diagnosis is performed by this module.
 
@@ -261,6 +277,7 @@ execution, or autonomous diagnosis is performed by this module.
 
 The next phase can extend the controlled workflow with additional warehouse
 operations and supportability data. Real external LLM/provider SDK
-integration, LangGraph/LiteLLM, RAG, embeddings/vector storage, tool execution,
-AI classification, ticket analytics, agentic behavior, and autonomous
-resolution remain out of scope for Prompt 10.
+integration, streaming, LangGraph/LiteLLM, RAG, embeddings/vector storage,
+tool execution, runtime observability instrumentation, local observability
+stack expansion, AI classification, ticket analytics, agentic behavior, and
+autonomous resolution remain out of scope for Prompt 11.

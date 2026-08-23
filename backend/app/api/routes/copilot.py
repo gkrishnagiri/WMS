@@ -8,8 +8,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.copilot import CopilotAnalyzeRequest, CopilotContextResponse, CopilotActionPlanResponse, CopilotMessageResponse, CopilotRecommendationResponse, CopilotSafeActionResponse, CopilotSessionCreate, CopilotSessionResponse, CopilotSummary
-from app.services import copilot_service
+from app.schemas.ai_config import InvocationResponse
+from app.schemas.copilot import CopilotAnalyzeRequest, CopilotContextResponse, CopilotActionPlanResponse, CopilotGovernedDraftResponse, CopilotMessageResponse, CopilotRecommendationResponse, CopilotSafeActionResponse, CopilotSessionCreate, CopilotSessionResponse, CopilotSummary
+from app.services import copilot_ai_service, copilot_service
 
 router = APIRouter(prefix="/api/v1/copilot", tags=["copilot"])
 
@@ -93,6 +94,41 @@ def generate_customer_update(session_id: UUID, db: Session = Depends(get_db)) ->
 @router.post("/sessions/{session_id}/generate-investigation-checklist", response_model=CopilotMessageResponse)
 def generate_investigation_checklist(session_id: UUID, db: Session = Depends(get_db)) -> CopilotMessageResponse:
     return _message(session_id, "INVESTIGATION_CHECKLIST", db)
+
+
+def _governed_draft(session_id: UUID, draft_type: str, db: Session) -> CopilotGovernedDraftResponse:
+    try:
+        return copilot_ai_service.generate_governed_draft(db, session_id, draft_type)
+    except copilot_service.CopilotError as error:
+        raise _error(error) from error
+
+
+@router.post("/sessions/{session_id}/generate-governed-context-summary", response_model=CopilotGovernedDraftResponse)
+def generate_governed_context_summary(session_id: UUID, db: Session = Depends(get_db)) -> CopilotGovernedDraftResponse:
+    return _governed_draft(session_id, "CONTEXT_SUMMARY", db)
+
+
+@router.post("/sessions/{session_id}/generate-governed-work-note", response_model=CopilotGovernedDraftResponse)
+def generate_governed_work_note(session_id: UUID, db: Session = Depends(get_db)) -> CopilotGovernedDraftResponse:
+    return _governed_draft(session_id, "WORK_NOTE_DRAFT", db)
+
+
+@router.post("/sessions/{session_id}/generate-governed-customer-update", response_model=CopilotGovernedDraftResponse)
+def generate_governed_customer_update(session_id: UUID, db: Session = Depends(get_db)) -> CopilotGovernedDraftResponse:
+    return _governed_draft(session_id, "CUSTOMER_UPDATE_DRAFT", db)
+
+
+@router.post("/sessions/{session_id}/generate-governed-investigation-checklist", response_model=CopilotGovernedDraftResponse)
+def generate_governed_investigation_checklist(session_id: UUID, db: Session = Depends(get_db)) -> CopilotGovernedDraftResponse:
+    return _governed_draft(session_id, "INVESTIGATION_CHECKLIST", db)
+
+
+@router.get("/sessions/{session_id}/ai-invocations", response_model=list[InvocationResponse])
+def session_ai_invocations(session_id: UUID, db: Session = Depends(get_db)) -> list[InvocationResponse]:
+    try:
+        return copilot_ai_service.list_session_invocations(db, session_id)
+    except copilot_service.CopilotError as error:
+        raise _error(error) from error
 
 
 @router.post("/recommendations/{recommendation_id}/accept", response_model=CopilotRecommendationResponse)

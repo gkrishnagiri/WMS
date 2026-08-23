@@ -112,6 +112,8 @@ class CopilotMessage(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="DRAFT")
     target_entity_type: Mapped[Optional[str]] = mapped_column(String(40))
     target_entity_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid(as_uuid=True))
+    ai_invocation_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("ai_invocation_logs.id"))
+    generation_mode: Mapped[Optional[str]] = mapped_column(String(30))
     created_by: Mapped[str] = mapped_column(String(120), nullable=False, default="support-engineer")
 
     session: Mapped[CopilotSession] = relationship(back_populates="messages")

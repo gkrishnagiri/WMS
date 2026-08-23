@@ -565,3 +565,56 @@ The backend remains on port `8050` and the frontend remains on port `4001`.
 Real external LLM calls, OpenAI/Azure/Anthropic SDKs, LangGraph, LiteLLM,
 RAG, embeddings/vector stores, autonomous remediation, tool execution,
 production secret storage, and ServiceNow integration are deferred.
+
+## Prompt 11 governed AI copilot draft integration
+
+Copilot sessions can now optionally use the Prompt 10 governed provider
+gateway for four draft types:
+
+```text
+Context summary → Work note draft → Customer update draft → Investigation checklist
+```
+
+The existing deterministic Prompt 09 generation remains available in parallel.
+Governed drafts send only the summarized context snapshot, use the enabled
+`MOCK-SUPPORT-COPILOT-001` model, evaluate safety rules first, and persist the
+AI invocation number, safety status, token estimate, and generation mode on the
+copilot message. Blocked requests create an audited `GOVERNED_AI_BLOCKED`
+message and never produce a provider response.
+
+New copilot endpoints are:
+
+- `POST /api/v1/copilot/sessions/{session_id}/generate-governed-context-summary`
+- `POST /api/v1/copilot/sessions/{session_id}/generate-governed-work-note`
+- `POST /api/v1/copilot/sessions/{session_id}/generate-governed-customer-update`
+- `POST /api/v1/copilot/sessions/{session_id}/generate-governed-investigation-checklist`
+- `GET /api/v1/copilot/sessions/{session_id}/ai-invocations`
+
+The copilot session detail page now provides governed draft controls and an AI
+invocation audit table. Generated content is always a reviewable draft; it is
+not applied to tickets, alerts, diagnostics, warehouse data, or external
+communications.
+
+## Prompt 11 validation
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+python -m app.db.seed_copilot
+python -m app.db.seed_ai_config
+pytest
+
+cd ../frontend
+npm run build
+```
+
+The backend remains on port `8050` and the frontend remains on port `4001`.
+Real external LLM calls, streaming, LangGraph, LiteLLM, RAG,
+embeddings/vector stores, autonomous remediation, external notifications,
+ServiceNow integration, runtime observability instrumentation, and local
+observability-stack expansion remain deferred.

@@ -54,6 +54,11 @@ def _invocation_response(db: Session, row: AiInvocationLog) -> InvocationRespons
     return InvocationResponse(id=row.id, invocation_number=row.invocation_number, provider_id=row.provider_id, provider_code=provider.provider_code if provider else None, model_config_id=row.model_config_id, model_code=model.model_code if model else None, template_id=row.template_id, template_code=template.template_code if template else None, policy_id=row.policy_id, policy_code=policy.policy_code if policy else None, request_source=row.request_source, request_source_id=row.request_source_id, task_type=row.task_type, status=row.status, input_summary=row.input_summary, prompt_rendered=row.prompt_rendered, response_text=row.response_text, response_json=row.response_json, safety_status=row.safety_status, blocked_reason=row.blocked_reason, latency_ms=row.latency_ms, input_tokens_estimated=row.input_tokens_estimated, output_tokens_estimated=row.output_tokens_estimated, total_tokens_estimated=row.total_tokens_estimated, cost_estimated=row.cost_estimated, created_by=row.created_by, created_at=row.created_at, updated_at=row.updated_at, guardrail_events=[GuardrailEventResponse.model_validate(event, from_attributes=True) for event in events])
 
 
+def invocation_response(db: Session, row: AiInvocationLog) -> InvocationResponse:
+    """Return the public invocation representation for cross-module links."""
+    return _invocation_response(db, row)
+
+
 def list_invocations(db: Session, status: str | None = None, task_type: str | None = None, provider_code: str | None = None, model_code: str | None = None, safety_status: str | None = None, request_source: str | None = None) -> list[InvocationResponse]:
     statement = select(AiInvocationLog).order_by(AiInvocationLog.created_at.desc()).limit(100)
     if status: statement = statement.where(AiInvocationLog.status == status.upper())
