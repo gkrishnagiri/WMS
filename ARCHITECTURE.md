@@ -417,6 +417,26 @@ can place the Operations BFF beside ServiceNow integration and the Agentic BFF
 beside agent orchestration without changing the current business application
 boundary.
 
+## Observability alert rules and AMS integration
+
+Prompt 17 introduces `obs_alert_rules`, evaluation runs, alert events,
+evidence, and ticket links. A manual deterministic evaluator uses local health
+checks plus internal runtime, batch, and AMS signals. Repeated active signals
+with the same key inside the rule cooldown are suppressed and counted rather
+than creating duplicate events or tickets.
+
+Alert lifecycle actions are explicit. AMS incidents are created only by the
+event action endpoint or a rule configured with `create_ticket_by_default`; a
+created ticket records `OBSERVABILITY_ALERT` / `OBSERVABILITY_ALERTING`, the
+condition, and evidence. No ticket is resolved and no production remediation
+is executed. The alert API is exposed by the full backend and Operations and
+Observability BFFs, and is intentionally absent from Business.
+
+This layer is separate from the earlier synthetic monitoring alert-noise
+model and does not provision Prometheus/Grafana rules or run a background
+scheduler. Future work includes external alert managers, production
+evaluation scheduling, and governed agentic handoff.
+
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,

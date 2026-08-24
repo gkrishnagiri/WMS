@@ -12,6 +12,7 @@ from app.api.routes.monitoring import router as monitoring_router
 from app.api.routes.observability import router as observability_router
 from app.api.routes.runtime_observability import router as runtime_observability_router
 from app.api.routes.observability_stack import router as observability_stack_router
+from app.api.routes.observability_alerts import router as observability_alerts_router
 from app.api.routes.synthetic_users import router as synthetic_users_router
 from app.api.routes.system import router as system_router
 from app.api.routes.user_reports import router as user_reports_router
@@ -31,6 +32,7 @@ router.include_router(monitoring_router)
 router.include_router(observability_router)
 router.include_router(runtime_observability_router)
 router.include_router(observability_stack_router)
+router.include_router(observability_alerts_router)
 router.include_router(batch_router)
 router.include_router(copilot_router)
 router.include_router(demo_control_router)

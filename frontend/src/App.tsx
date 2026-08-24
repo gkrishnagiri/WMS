@@ -16,6 +16,7 @@ import { RuntimeObservabilityOverviewPage, RuntimeTraceDetailPage, RuntimeTraces
 import { ObservabilityDashboardsPage, ObservabilityStackHealthPage, ObservabilityStackOverviewPage, ObservabilityStackTestPage } from "./pages/ObservabilityStackPages";
 import { ExperienceRootPage } from "./pages/ExperienceHomePage";
 import { DemoControlPage } from "./pages/DemoControlPage";
+import { ObservabilityAlertEventDetailPage, ObservabilityAlertEvaluationRunsPage, ObservabilityAlertEventsPage, ObservabilityAlertRulesPage, ObservabilityAlertsPage } from "./pages/ObservabilityAlertPages";
 
 export default function App() {
   return (
@@ -23,6 +24,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<ExperienceRootPage />} />
         <Route path="/demo-control" element={<DemoControlPage />} />
+        <Route path="/observability-alerts" element={<ObservabilityAlertsPage />} />
+        <Route path="/observability-alerts/rules" element={<ObservabilityAlertRulesPage />} />
+        <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />
+        <Route path="/observability-alerts/events" element={<ObservabilityAlertEventsPage />} />
+        <Route path="/observability-alerts/events/:eventId" element={<ObservabilityAlertEventDetailPage />} />
         <Route path="/health" element={<HealthPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/warehouse" element={<WarehousePage />} />

@@ -87,6 +87,7 @@ def readiness() -> DemoReadinessResponse:
     ]
     for item in EXPERIENCE_DEFINITIONS.values():
         items.append(_http_item(f"{item.name} backend", "backend", f"{item.backend_url}/health"))
+    items.append(_http_item("Observability Alerting", "backend", "http://localhost:8050/api/v1/observability-alerts/summary"))
     for item in EXPERIENCE_DEFINITIONS.values():
         items.append(_http_item(f"{item.name} frontend", "frontend", item.frontend_url))
     return DemoReadinessResponse(

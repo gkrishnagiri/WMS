@@ -11,6 +11,10 @@ const allExperiences: ExperienceCode[] = ["full", "business", "operations", "sim
 export const navigation: NavigationItem[] = [
   { label: "Dashboard", path: "/", experiences: allExperiences },
   { label: "Demo Control", path: "/demo-control", experiences: ["full"] },
+  { label: "Observability Alerts", path: "/observability-alerts", experiences: ["full", "operations", "observability"] },
+  { label: "Alert Rules", path: "/observability-alerts/rules", experiences: ["full", "operations", "observability"] },
+  { label: "Alert Evaluation Runs", path: "/observability-alerts/evaluation-runs", experiences: ["full", "operations", "observability"] },
+  { label: "Alert Events", path: "/observability-alerts/events", experiences: ["full", "operations", "observability"] },
   { label: "Warehouse", path: "/warehouse", experiences: ["full", "business"] },
   { label: "Inventory", path: "/warehouse/inventory", experiences: ["full", "business"] },
   { label: "Orders", path: "/warehouse/orders", experiences: ["full", "business"] },

@@ -55,6 +55,7 @@ export const EXPERIENCE_CONFIG: Record<ExperienceCode, ExperienceDefinition> = {
       "/observability/diagnostics",
       "/batch/runs",
       "/copilot/sessions",
+      "/observability-alerts",
       "/health",
       "/about",
     ],
@@ -90,6 +91,7 @@ export const EXPERIENCE_CONFIG: Record<ExperienceCode, ExperienceDefinition> = {
     enabledRoutePrefixes: [
       "/",
       "/observability",
+      "/observability-alerts",
       "/health",
       "/about",
     ],

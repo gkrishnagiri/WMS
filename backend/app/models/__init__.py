@@ -7,6 +7,7 @@ from app.models.ai_config import AiGuardrailEvent, AiInvocationLog, AiModelConfi
 from app.models.operations import OpsException
 from app.models.monitoring import MonAlert, MonAlertEvent, MonAlertRule, MonComponent, MonTriageCase, MonTriageCaseAlert
 from app.models.observability import ObsDiagnosticCase, ObsDiagnosticEvidence, ObsLogEvent, ObsMetricSample, ObsSpan, ObsTrace
+from app.models.observability_alerts import ObsAlertEvaluationRun, ObsAlertEvent, ObsAlertEventEvidence, ObsAlertRule, ObsAlertTicketLink
 from app.models.synthetic_users import SyntheticJourney, SyntheticJourneyRun, SyntheticUser
 from app.models.user_reports import AmsUserReport
 
@@ -77,4 +78,9 @@ __all__ = [
     "ObsMetricSample",
     "ObsDiagnosticCase",
     "ObsDiagnosticEvidence",
+    "ObsAlertRule",
+    "ObsAlertEvaluationRun",
+    "ObsAlertEvent",
+    "ObsAlertEventEvidence",
+    "ObsAlertTicketLink",
 ]

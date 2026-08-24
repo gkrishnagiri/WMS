@@ -925,3 +925,34 @@ The full demo stack retains the existing ports: UI `4001`, BFF/frontend pairs
 `9090`, Grafana `3001`, Tempo `3200`, Loki `3100`, and Collector ports
 `4317`/`4318`/`13133`. Prompt 13 observability, Prompt 14 frontend
 segregation, and Prompt 15 BFF boundaries remain unchanged.
+
+## Prompt 17 observability alert rules and AMS integration
+
+Prompt 17 adds a deterministic alerting layer with alert rules, evaluation
+runs, alert events, evidence, and AMS ticket links. Ten idempotently seeded
+rules cover backend/BFF health, API errors/latency, batch failure spikes, and
+AMS backlog. Seed with:
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.db.seed_observability_alerts
+```
+
+Manual evaluation uses short health probes and internal EOS runtime, batch,
+and AMS data. Cooldown deduplication updates occurrence/suppression counts
+for repeated signals. Engineers can acknowledge, resolve, or explicitly
+create one AMS incident carrying `OBSERVABILITY_ALERT` and captured evidence.
+No remediation is performed, and tests do not require external observability
+services.
+
+Alert APIs are available on the full backend and Operations/Observability
+BFFs under `/api/v1/observability-alerts`. Full, Operations, and Observability
+UIs expose alert overview, rules, evaluation runs, events, evidence,
+lifecycle, and ticket-link pages. Business intentionally returns 404 for this
+support surface. Demo-control readiness includes an Observability Alerting
+check.
+
+This phase has no uncontrolled scheduler, Prometheus/Grafana alert-rule
+provisioning, ServiceNow integration, external LLM, authentication, or
+autonomous remediation.
