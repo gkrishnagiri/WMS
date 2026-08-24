@@ -73,3 +73,34 @@ async def test_agent_summary_and_simulation_bff_boundary(agent_client):
     summary = await agent_client.get("/api/v1/agent-chat/summary")
     assert summary.status_code == 200
     assert summary.json()["stage_mode"] == "STAGE_1_READ_ONLY"
+
+
+@pytest.mark.anyio
+async def test_contextual_ticket_handoff_reuses_active_investigation(agent_client):
+    ticket = await agent_client.post("/api/v1/ams/tickets", json={"short_description": "Order allocation is stuck", "description": "Inventory allocation failed during fulfillment.", "severity": "HIGH", "priority": "P2"})
+    assert ticket.status_code == 201
+    ticket_id = ticket.json()["id"]
+    first = await agent_client.post(f"/api/v1/agent-chat/intake/from-ams-ticket/{ticket_id}", json={"initial_message": "Investigate this ticket and summarize next steps."})
+    assert first.status_code == 201
+    first_body = first.json()
+    assert first_body["created_new_case"] is True
+    assert first_body["created_new_session"] is True
+    assert first_body["source_object_type"] == "AMS_TICKET"
+    assert first_body["stage_mode"] == "STAGE_1_READ_ONLY"
+    assert first_body["actions_executed"] == 0
+    assert first_body["session"]["case"]["source_object_display"] == ticket.json()["ticket_number"]
+
+    second = await agent_client.post(f"/api/v1/agent-chat/intake/from-ams-ticket/{ticket_id}", json={"reuse_existing": True})
+    assert second.status_code == 201
+    second_body = second.json()
+    assert second_body["created_new_case"] is False
+    assert second_body["created_new_session"] is False
+    assert second_body["reused_existing_case"] is True
+    assert second_body["case_id"] == first_body["case_id"]
+    assert second_body["session_id"] == first_body["session_id"]
+
+
+@pytest.mark.anyio
+async def test_contextual_handoff_source_routes_return_not_found_for_missing_source(agent_client):
+    response = await agent_client.post("/api/v1/agent-chat/intake/from-operations-exception/00000000-0000-0000-0000-000000000000", json={})
+    assert response.status_code == 404

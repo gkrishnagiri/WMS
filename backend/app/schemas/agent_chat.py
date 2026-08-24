@@ -23,6 +23,15 @@ class AgentCaseCreate(BaseModel):
     linked_inventory_item_id: UUID | None = None
 
 
+class AgentHandoffRequest(BaseModel):
+    initial_message: str = Field(default="Investigate this issue and summarize likely next steps.", min_length=1, max_length=6000)
+    reuse_existing: bool = True
+    use_real_model: bool = False
+    provider_code: str | None = Field(default=None, max_length=100)
+    model_code: str | None = Field(default=None, max_length=120)
+    dry_run: bool = False
+
+
 class AgentSessionCreate(BaseModel):
     case_id: UUID | None = None
     audience: str = "SERVICE_ENGINEER"
@@ -73,11 +82,35 @@ class AgentCaseResponse(BaseModel):
     linked_order_id: UUID | None
     linked_shipment_id: UUID | None
     linked_inventory_item_id: UUID | None
+    source_object_type: str | None
+    source_object_id: UUID | None
+    source_object_display: str | None
+    source_object_url: str | None
     created_at: datetime
     updated_at: datetime
     closed_at: datetime | None
 
     model_config = {"from_attributes": True}
+
+
+class AgentHandoffResponse(BaseModel):
+    case_id: str
+    case_record_id: UUID
+    session_id: str
+    session_record_id: UUID
+    source_object_type: str
+    source_object_id: UUID
+    source_object_display: str
+    source_object_url: str | None
+    created_new_case: bool
+    created_new_session: bool
+    reused_existing_case: bool
+    stage_mode: str
+    generation_mode: str
+    actions_executed: int
+    agent_chat_url: str
+    message: str
+    session: dict
 
 
 class AgentChatMessageResponse(BaseModel):

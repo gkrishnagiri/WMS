@@ -7,11 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models.ams import AmsTicket
-from app.models.batch import BatchRun
-from app.models.observability_alerts import ObsAlertEvent
-from app.schemas.agent_chat import AgentActionProposalResponse, AgentCaseCreate, AgentCaseResponse, AgentChatMessageResponse, AgentChatSessionResponse, AgentEvidenceResponse, AgentIntakeRequest, AgentMessageCreate, AgentRunResponse, AgentSessionCreate
+from app.schemas.agent_chat import AgentActionProposalResponse, AgentCaseCreate, AgentCaseResponse, AgentChatMessageResponse, AgentChatSessionResponse, AgentEvidenceResponse, AgentHandoffRequest, AgentHandoffResponse, AgentIntakeRequest, AgentMessageCreate, AgentRunResponse, AgentSessionCreate
 from app.services import agent_orchestrator_service as service
+from app.services.agent_handoff_service import AgentHandoffError, handoff
 
 router = APIRouter(prefix="/api/v1/agent-chat", tags=["agent-chat"])
 
@@ -104,6 +102,14 @@ def _intake(request: AgentIntakeRequest, db: Session, audience: str, engineer: b
     except service.AgentChatError as error: db.rollback(); raise _error(error) from error
 
 
+def _handoff(source_type: str, source_id: UUID, request: AgentHandoffRequest, db: Session) -> AgentHandoffResponse:
+    try:
+        return handoff(db, source_type, source_id, request)
+    except AgentHandoffError as error:
+        db.rollback()
+        raise _error(error) from error
+
+
 @router.post("/intake/user-issue", response_model=AgentChatSessionResponse, status_code=201)
 def user_issue_intake(request: AgentIntakeRequest, db: Session = Depends(get_db)): return _intake(request, db, "USER", False)
 
@@ -112,22 +118,29 @@ def user_issue_intake(request: AgentIntakeRequest, db: Session = Depends(get_db)
 def engineer_intake(request: AgentIntakeRequest, db: Session = Depends(get_db)): return _intake(request, db, "SERVICE_ENGINEER", True)
 
 
-@router.post("/intake/from-ams-ticket/{ticket_id}", response_model=AgentChatSessionResponse, status_code=201)
-def from_ticket(ticket_id: UUID, db: Session = Depends(get_db)):
-    ticket = db.get(AmsTicket, ticket_id)
-    if ticket is None: raise HTTPException(status_code=404, detail="AMS ticket not found.")
-    return _intake(AgentIntakeRequest(title=f"Investigate {ticket.ticket_number}", description=ticket.description, initial_message=f"Investigate this AMS ticket: {ticket.short_description}", created_by_role="SERVICE_ENGINEER", linked_ams_ticket_id=ticket.id), db, "SERVICE_ENGINEER", True)
+@router.post("/intake/from-ams-ticket/{ticket_id}", response_model=AgentHandoffResponse, status_code=201)
+def from_ticket(ticket_id: UUID, request: AgentHandoffRequest = AgentHandoffRequest(), db: Session = Depends(get_db)): return _handoff("AMS_TICKET", ticket_id, request, db)
 
 
-@router.post("/intake/from-observability-alert/{event_id}", response_model=AgentChatSessionResponse, status_code=201)
-def from_alert(event_id: UUID, db: Session = Depends(get_db)):
-    event = db.get(ObsAlertEvent, event_id)
-    if event is None: raise HTTPException(status_code=404, detail="Observability alert event not found.")
-    return _intake(AgentIntakeRequest(title=f"Investigate {event.event_id}", description=event.description, initial_message=f"Summarize evidence for this observability alert: {event.title}", created_by_role="SERVICE_ENGINEER", linked_alert_event_id=event.id), db, "SERVICE_ENGINEER", True)
+@router.post("/intake/from-observability-alert/{event_id}", response_model=AgentHandoffResponse, status_code=201)
+def from_alert(event_id: UUID, request: AgentHandoffRequest = AgentHandoffRequest(), db: Session = Depends(get_db)): return _handoff("OBSERVABILITY_ALERT", event_id, request, db)
 
 
-@router.post("/intake/from-batch-run/{run_id}", response_model=AgentChatSessionResponse, status_code=201)
-def from_batch(run_id: UUID, db: Session = Depends(get_db)):
-    batch = db.get(BatchRun, run_id)
-    if batch is None: raise HTTPException(status_code=404, detail="Batch run not found.")
-    return _intake(AgentIntakeRequest(title=f"Investigate {batch.run_number}", description=batch.failure_message or batch.summary, initial_message=f"Why did this batch run fail and what should I check next? {batch.run_number}", created_by_role="SERVICE_ENGINEER", linked_batch_run_id=batch.id), db, "SERVICE_ENGINEER", True)
+@router.post("/intake/from-batch-run/{run_id}", response_model=AgentHandoffResponse, status_code=201)
+def from_batch(run_id: UUID, request: AgentHandoffRequest = AgentHandoffRequest(), db: Session = Depends(get_db)): return _handoff("BATCH_FAILURE", run_id, request, db)
+
+
+@router.post("/intake/from-user-report/{report_id}", response_model=AgentHandoffResponse, status_code=201)
+def from_user_report(report_id: UUID, request: AgentHandoffRequest = AgentHandoffRequest(), db: Session = Depends(get_db)): return _handoff("USER_ISSUE", report_id, request, db)
+
+
+@router.post("/intake/from-diagnostic-case/{diagnostic_case_id}", response_model=AgentHandoffResponse, status_code=201)
+def from_diagnostic(diagnostic_case_id: UUID, request: AgentHandoffRequest = AgentHandoffRequest(), db: Session = Depends(get_db)): return _handoff("DIAGNOSTIC_CASE", diagnostic_case_id, request, db)
+
+
+@router.post("/intake/from-monitoring-triage/{triage_case_id}", response_model=AgentHandoffResponse, status_code=201)
+def from_triage(triage_case_id: UUID, request: AgentHandoffRequest = AgentHandoffRequest(), db: Session = Depends(get_db)): return _handoff("MONITORING_TRIAGE", triage_case_id, request, db)
+
+
+@router.post("/intake/from-operations-exception/{exception_id}", response_model=AgentHandoffResponse, status_code=201)
+def from_exception(exception_id: UUID, request: AgentHandoffRequest = AgentHandoffRequest(), db: Session = Depends(get_db)): return _handoff("OPERATIONS_EXCEPTION", exception_id, request, db)

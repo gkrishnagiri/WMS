@@ -1106,3 +1106,20 @@ Prompt 20 does not add autonomous remediation, external model calls by
 default, RAG/vector storage, authentication, ServiceNow, or an agent
 framework. Optional manual real-model validation must be performed only with
 an intentionally supplied environment key and must never commit that key.
+
+## Prompt 21 contextual agent investigation handoff
+
+Prompt 21 adds contextual `Investigate with Agent` handoffs from AMS tickets,
+observability alerts, batch runs, user reports, diagnostic cases, monitoring
+triage cases, and operations exceptions. A handoff creates or reuses an open
+agent case and active chat session, stores source metadata, gathers source
+evidence, runs deterministic knowledge retrieval, and opens Stage 1 guidance.
+Repeated handoffs for the same source reuse the active investigation.
+
+Endpoints are under `/api/v1/agent-chat/intake`: `from-ams-ticket`,
+`from-observability-alert`, `from-batch-run`, `from-user-report`,
+`from-diagnostic-case`, `from-monitoring-triage`, and
+`from-operations-exception`. Operations and Agentic BFFs expose operational
+handoffs; Business exposes user-report handoff; Simulation does not expose
+agent handoffs. No external model call, remediation, or ServiceNow integration
+is present.

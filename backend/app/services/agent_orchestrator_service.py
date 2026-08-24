@@ -15,6 +15,8 @@ from app.models.batch import BatchRun, BatchRunEvent
 from app.models.observability import ObsDiagnosticCase
 from app.models.observability_alerts import ObsAlertEvent, ObsAlertEventEvidence
 from app.models.user_reports import AmsUserReport
+from app.models.monitoring import MonTriageCase
+from app.models.operations import OpsException
 from app.schemas.agent_chat import AgentActionProposalResponse, AgentCaseCreate, AgentCaseResponse, AgentChatMessageResponse, AgentChatSessionResponse, AgentEvidenceResponse, AgentIntakeRequest, AgentMessageCreate, AgentRunResponse, AgentSessionCreate
 from app.schemas.ai_config import RealModelRequest
 from app.services import ai_provider_gateway
@@ -125,6 +127,14 @@ def _retrieve_evidence(db: Session, case: AgentCase, run: AgentOrchestrationRun)
         diagnostic = db.get(ObsDiagnosticCase, case.linked_diagnostic_case_id)
         if diagnostic:
             items.append(_add_evidence(db, case, run, "DIAGNOSTIC_CASE", "obs_diagnostic_cases", diagnostic.diagnostic_number, f"{diagnostic.confidence_level} confidence: {diagnostic.probable_cause}", diagnostic.id, {"status": diagnostic.status, "next_steps": diagnostic.recommended_next_steps}))
+    if case.source_object_type == "MONITORING_TRIAGE" and case.source_object_id:
+        triage = db.get(MonTriageCase, case.source_object_id)
+        if triage:
+            items.append(_add_evidence(db, case, run, "MONITORING_TRIAGE", "mon_triage_cases", triage.case_number, f"{triage.status} triage case: {triage.description}", triage.id, {"impact": triage.suspected_impact, "root_cause": triage.suspected_root_cause}))
+    if case.source_object_type == "OPERATIONS_EXCEPTION" and case.source_object_id:
+        exception = db.get(OpsException, case.source_object_id)
+        if exception:
+            items.append(_add_evidence(db, case, run, "OPERATIONS_EXCEPTION", "ops_exceptions", exception.exception_number, f"{exception.status} exception: {exception.description}", exception.id, {"type": exception.exception_type, "impact": exception.business_impact}))
     existing_ids = {item.source_id for item in items if item.source_id}
     for alert in db.scalars(select(ObsAlertEvent).where(ObsAlertEvent.status.in_(("OPEN", "ACKNOWLEDGED", "TICKETED"))).order_by(ObsAlertEvent.last_seen_at.desc()).limit(2)).all():
         if alert.id not in existing_ids:

@@ -1,31 +1,605 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Box, Button, Card, CardContent, Checkbox, Chip, CircularProgress, FormControlLabel, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  FormControlLabel,
+  Grid,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { closeAgentSession, getAgentCases, getAgentCase, getAgentEvidence, getAgentProposals, getAgentRuns, getAgentSession, getAgentSessions, getAgentSummary, intakeEngineerIssue, intakeUserIssue, sendAgentMessage, type AgentSession } from "../services/agentChatApi";
+import {
+  closeAgentSession,
+  getAgentCases,
+  getAgentCase,
+  getAgentEvidence,
+  getAgentProposals,
+  getAgentRuns,
+  getAgentSession,
+  getAgentSessions,
+  getAgentSummary,
+  intakeEngineerIssue,
+  intakeUserIssue,
+  sendAgentMessage,
+  type AgentSession,
+} from "../services/agentChatApi";
 import { getExperienceCode } from "../config/experience";
 
-function Banner() { return <Alert severity="info" sx={{ mb: 3 }}>Stage 1 read-only deterministic agent. No external LLM call is made. No autonomous remediation or system-changing action is executed.</Alert>; }
-function State({ loading, error }: { loading: boolean; error: Error | null }) { if (loading) return <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 2 }}><CircularProgress size={20} />Loading agent chat…</Box>; if (error) return <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>; return null; }
-function Header({ title }: { title: string }) { return <><Typography variant="overline" color="primary">Agent Chat and Case Intake</Typography><Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>{title}</Typography><Banner /></>; }
+function Banner() {
+  return (
+    <Alert severity="info" sx={{ mb: 3 }}>
+      Stage 1 read-only deterministic agent. No external LLM call is made. No
+      autonomous remediation or system-changing action is executed.
+    </Alert>
+  );
+}
 
-export function AgentChatHomePage() { const summary = useQuery({ queryKey: ["agent-chat", "summary"], queryFn: getAgentSummary }); return <Box><Header title="Agent Support Console" /><Typography color="text.secondary" sx={{ mb: 3 }}>Create a support case, gather existing EOS evidence, and review deterministic Stage 1 guidance.</Typography>{summary.data && <Grid container spacing={2}>{[["Open cases", summary.data.open_cases], ["Active sessions", summary.data.active_sessions], ["Orchestration runs", summary.data.orchestration_runs], ["Evidence items", summary.data.evidence_items], ["Action proposals", summary.data.action_proposals], ["Actions executed", summary.data.actions_executed]].map(([label, value]) => <Grid size={{ xs: 6, md: 2 }} key={String(label)}><Card><CardContent><Typography color="text.secondary">{label}</Typography><Typography variant="h4">{value}</Typography></CardContent></Card></Grid>)}</Grid>}<State loading={summary.isLoading} error={summary.error as Error | null} /><Box sx={{ mt: 4, display: "flex", gap: 2 }}><Button component={Link} variant="contained" to="/agent-chat/user">User Issue Intake</Button><Button component={Link} variant="outlined" to="/agent-chat/engineer">Engineer Investigation</Button><Button component={Link} variant="outlined" to="/agent-chat/cases">Cases and Sessions</Button></Box></Box>; }
+function InvestigationSource({ session }: { session: AgentSession }) {
+  const source = session.case;
+  if (!source.source_object_type) return null;
+  return (
+    <Alert severity="info" sx={{ mt: 2 }}>
+      Investigation Source: {source.source_object_type} ·{" "}
+      {source.source_object_display || source.source_object_id}
+      {source.source_object_url && (
+        <>
+          {" "}
+          · <Link to={source.source_object_url}>Open source</Link>
+        </>
+      )}
+    </Alert>
+  );
+}
+function State({ loading, error }: { loading: boolean; error: Error | null }) {
+  if (loading)
+    return (
+      <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 2 }}>
+        <CircularProgress size={20} />
+        Loading agent chat…
+      </Box>
+    );
+  if (error)
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {error.message}
+      </Alert>
+    );
+  return null;
+}
+function Header({ title }: { title: string }) {
+  return (
+    <>
+      <Typography variant="overline" color="primary">
+        Agent Chat and Case Intake
+      </Typography>
+      <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+        {title}
+      </Typography>
+      <Banner />
+    </>
+  );
+}
 
-export function AgentIntakePage({ engineer = false }: { engineer?: boolean }) { const navigate = useNavigate(); const [title, setTitle] = useState(""); const [description, setDescription] = useState(""); const [message, setMessage] = useState(""); const mutation = useMutation({ mutationFn: () => (engineer ? intakeEngineerIssue : intakeUserIssue)({ title, description, initial_message: message }), onSuccess: (session) => navigate(`/agent-chat/sessions/${session.id}`) }); return <Box><Header title={engineer ? "Engineer Investigation" : "Get Help With an Issue"} /><Card sx={{ maxWidth: 760 }}><CardContent><Typography color="text.secondary" sx={{ mb: 2 }}>{engineer ? "Ask the deterministic Stage 1 agent to gather support evidence." : "Describe a business issue and receive read-only guidance."}</Typography><TextField fullWidth label="Title" value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2 }} /><TextField fullWidth multiline minRows={3} label="Case description" value={description} onChange={(e) => setDescription(e.target.value)} sx={{ mb: 2 }} /><TextField fullWidth multiline minRows={3} label="Initial message" value={message} onChange={(e) => setMessage(e.target.value)} sx={{ mb: 2 }} /><Button variant="contained" disabled={mutation.isPending || !title || !description || !message} onClick={() => mutation.mutate()}>Start Chat</Button>{mutation.error && <Alert severity="error" sx={{ mt: 2 }}>{(mutation.error as Error).message}</Alert>}</CardContent></Card></Box>; }
+export function AgentChatHomePage() {
+  const summary = useQuery({
+    queryKey: ["agent-chat", "summary"],
+    queryFn: getAgentSummary,
+  });
+  return (
+    <Box>
+      <Header title="Agent Support Console" />
+      <Typography color="text.secondary" sx={{ mb: 3 }}>
+        Create a support case, gather existing EOS evidence, and review
+        deterministic Stage 1 guidance.
+      </Typography>
+      {summary.data && (
+        <Grid container spacing={2}>
+          {[
+            ["Open cases", summary.data.open_cases],
+            ["Active sessions", summary.data.active_sessions],
+            ["Orchestration runs", summary.data.orchestration_runs],
+            ["Evidence items", summary.data.evidence_items],
+            ["Action proposals", summary.data.action_proposals],
+            ["Actions executed", summary.data.actions_executed],
+          ].map(([label, value]) => (
+            <Grid size={{ xs: 6, md: 2 }} key={String(label)}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary">{label}</Typography>
+                  <Typography variant="h4">{value}</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      <State
+        loading={summary.isLoading}
+        error={summary.error as Error | null}
+      />
+      <Box sx={{ mt: 4, display: "flex", gap: 2 }}>
+        <Button component={Link} variant="contained" to="/agent-chat/user">
+          User Issue Intake
+        </Button>
+        <Button component={Link} variant="outlined" to="/agent-chat/engineer">
+          Engineer Investigation
+        </Button>
+        <Button component={Link} variant="outlined" to="/agent-chat/cases">
+          Cases and Sessions
+        </Button>
+      </Box>
+    </Box>
+  );
+}
 
-export function AgentCasesPage() { const cases = useQuery({ queryKey: ["agent-chat", "cases"], queryFn: getAgentCases }); return <Box><Header title="Agent Cases" /><State loading={cases.isLoading} error={cases.error as Error | null} /><TableContainer component={Paper}><Table><TableHead><TableRow>{["Case", "Type", "Status", "Priority", "Stage", "Created"].map((x) => <TableCell key={x}>{x}</TableCell>)}</TableRow></TableHead><TableBody>{cases.data?.map((item) => <TableRow key={item.id}><TableCell><Link to={`/agent-chat/cases/${item.id}`}>{item.case_id}</Link><Typography variant="body2">{item.title}</Typography></TableCell><TableCell>{item.case_type}</TableCell><TableCell><Chip size="small" label={item.status} /></TableCell><TableCell>{item.priority}</TableCell><TableCell>{item.stage_mode}</TableCell><TableCell>{new Date(item.created_at).toLocaleString()}</TableCell></TableRow>)}</TableBody></Table></TableContainer></Box>; }
+export function AgentIntakePage({ engineer = false }: { engineer?: boolean }) {
+  const navigate = useNavigate();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [message, setMessage] = useState("");
+  const mutation = useMutation({
+    mutationFn: () =>
+      (engineer ? intakeEngineerIssue : intakeUserIssue)({
+        title,
+        description,
+        initial_message: message,
+      }),
+    onSuccess: (session) => navigate(`/agent-chat/sessions/${session.id}`),
+  });
+  return (
+    <Box>
+      <Header
+        title={engineer ? "Engineer Investigation" : "Get Help With an Issue"}
+      />
+      <Card sx={{ maxWidth: 760 }}>
+        <CardContent>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            {engineer
+              ? "Ask the deterministic Stage 1 agent to gather support evidence."
+              : "Describe a business issue and receive read-only guidance."}
+          </Typography>
+          <TextField
+            fullWidth
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Case description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Initial message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <Button
+            variant="contained"
+            disabled={mutation.isPending || !title || !description || !message}
+            onClick={() => mutation.mutate()}
+          >
+            Start Chat
+          </Button>
+          {mutation.error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {(mutation.error as Error).message}
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
+
+export function AgentCasesPage() {
+  const cases = useQuery({
+    queryKey: ["agent-chat", "cases"],
+    queryFn: getAgentCases,
+  });
+  return (
+    <Box>
+      <Header title="Agent Cases" />
+      <State loading={cases.isLoading} error={cases.error as Error | null} />
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {["Case", "Type", "Status", "Priority", "Stage", "Created"].map(
+                (x) => (
+                  <TableCell key={x}>{x}</TableCell>
+                ),
+              )}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {cases.data?.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <Link to={`/agent-chat/cases/${item.id}`}>
+                    {item.case_id}
+                  </Link>
+                  <Typography variant="body2">{item.title}</Typography>
+                </TableCell>
+                <TableCell>{item.case_type}</TableCell>
+                <TableCell>
+                  <Chip size="small" label={item.status} />
+                </TableCell>
+                <TableCell>{item.priority}</TableCell>
+                <TableCell>{item.stage_mode}</TableCell>
+                <TableCell>
+                  {new Date(item.created_at).toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+}
 
 export function AgentCaseDetailPage() {
   const { caseId = "" } = useParams();
-  const detail = useQuery({ queryKey: ["agent-chat", "case", caseId], queryFn: () => getAgentCase(caseId), enabled: Boolean(caseId) });
-  const evidence = useQuery({ queryKey: ["agent-chat", "case", caseId, "evidence"], queryFn: () => getAgentEvidence(caseId), enabled: Boolean(caseId) });
-  const runs = useQuery({ queryKey: ["agent-chat", "case", caseId, "runs"], queryFn: () => getAgentRuns(caseId), enabled: Boolean(caseId) });
-  const proposals = useQuery({ queryKey: ["agent-chat", "case", caseId, "proposals"], queryFn: () => getAgentProposals(caseId), enabled: Boolean(caseId) });
-  return <Box><Header title="Agent Case Detail" /><State loading={detail.isLoading} error={detail.error as Error | null} />{detail.data && <><Card sx={{ mb: 3 }}><CardContent><Typography variant="h5">{detail.data.title}</Typography><Typography color="text.secondary">{detail.data.case_id} · {detail.data.case_type} · {detail.data.stage_mode}</Typography><Box sx={{ display: "flex", gap: 1, mt: 1 }}><Chip label={detail.data.status} /><Chip label={detail.data.priority} variant="outlined" /></Box><Typography sx={{ mt: 2 }}>{detail.data.description}</Typography><Button component={Link} to="/agent-chat/sessions" sx={{ mt: 2 }}>View chat sessions</Button></CardContent></Card><Grid container spacing={3}><Grid size={{ xs: 12, md: 4 }}><Typography variant="h6">Evidence</Typography>{evidence.data?.map((item) => <Paper key={item.id} sx={{ p: 1.5, my: 1 }}><Typography fontWeight={700}>{item.evidence_type}: {item.title}</Typography><Typography variant="body2">{item.summary}</Typography></Paper>)}</Grid><Grid size={{ xs: 12, md: 4 }}><Typography variant="h6">Orchestration Runs</Typography>{runs.data?.map((run) => <Paper key={run.id} sx={{ p: 1.5, my: 1 }}><Typography>{run.run_id} · {run.status}</Typography><Typography variant="body2">{run.summary}</Typography></Paper>)}</Grid><Grid size={{ xs: 12, md: 4 }}><Typography variant="h6">Action Proposals</Typography>{proposals.data?.map((proposal) => <Paper key={proposal.id} sx={{ p: 1.5, my: 1 }}><Typography>{proposal.title}</Typography><Typography variant="body2">{proposal.execution_status} · approval required: {proposal.requires_approval ? "yes" : "no"}</Typography></Paper>)}</Grid></Grid></>}</Box>;
+  const detail = useQuery({
+    queryKey: ["agent-chat", "case", caseId],
+    queryFn: () => getAgentCase(caseId),
+    enabled: Boolean(caseId),
+  });
+  const evidence = useQuery({
+    queryKey: ["agent-chat", "case", caseId, "evidence"],
+    queryFn: () => getAgentEvidence(caseId),
+    enabled: Boolean(caseId),
+  });
+  const runs = useQuery({
+    queryKey: ["agent-chat", "case", caseId, "runs"],
+    queryFn: () => getAgentRuns(caseId),
+    enabled: Boolean(caseId),
+  });
+  const proposals = useQuery({
+    queryKey: ["agent-chat", "case", caseId, "proposals"],
+    queryFn: () => getAgentProposals(caseId),
+    enabled: Boolean(caseId),
+  });
+  return (
+    <Box>
+      <Header title="Agent Case Detail" />
+      <State loading={detail.isLoading} error={detail.error as Error | null} />
+      {detail.data && (
+        <>
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h5">{detail.data.title}</Typography>
+              <Typography color="text.secondary">
+                {detail.data.case_id} · {detail.data.case_type} ·{" "}
+                {detail.data.stage_mode}
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                <Chip label={detail.data.status} />
+                <Chip label={detail.data.priority} variant="outlined" />
+              </Box>
+              <Typography sx={{ mt: 2 }}>{detail.data.description}</Typography>
+              <Button component={Link} to="/agent-chat/sessions" sx={{ mt: 2 }}>
+                View chat sessions
+              </Button>
+            </CardContent>
+          </Card>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography variant="h6">Evidence</Typography>
+              {evidence.data?.map((item) => (
+                <Paper key={item.id} sx={{ p: 1.5, my: 1 }}>
+                  <Typography fontWeight={700}>
+                    {item.evidence_type}: {item.title}
+                  </Typography>
+                  <Typography variant="body2">{item.summary}</Typography>
+                </Paper>
+              ))}
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography variant="h6">Orchestration Runs</Typography>
+              {runs.data?.map((run) => (
+                <Paper key={run.id} sx={{ p: 1.5, my: 1 }}>
+                  <Typography>
+                    {run.run_id} · {run.status}
+                  </Typography>
+                  <Typography variant="body2">{run.summary}</Typography>
+                </Paper>
+              ))}
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Typography variant="h6">Action Proposals</Typography>
+              {proposals.data?.map((proposal) => (
+                <Paper key={proposal.id} sx={{ p: 1.5, my: 1 }}>
+                  <Typography>{proposal.title}</Typography>
+                  <Typography variant="body2">
+                    {proposal.execution_status} · approval required:{" "}
+                    {proposal.requires_approval ? "yes" : "no"}
+                  </Typography>
+                </Paper>
+              ))}
+            </Grid>
+          </Grid>
+        </>
+      )}
+    </Box>
+  );
 }
 
-export function AgentSessionsPage() { const sessions = useQuery({ queryKey: ["agent-chat", "sessions"], queryFn: getAgentSessions }); return <Box><Header title="Chat Sessions" /><State loading={sessions.isLoading} error={sessions.error as Error | null} /><TableContainer component={Paper}><Table><TableHead><TableRow>{["Session", "Title", "Audience", "Status", "Case", "Created"].map((x) => <TableCell key={x}>{x}</TableCell>)}</TableRow></TableHead><TableBody>{sessions.data?.map((item) => <TableRow key={item.id}><TableCell><Link to={`/agent-chat/sessions/${item.id}`}>{item.session_id}</Link></TableCell><TableCell>{item.title}</TableCell><TableCell>{item.audience}</TableCell><TableCell>{item.status}</TableCell><TableCell>{item.case?.case_id}</TableCell><TableCell>{new Date(item.created_at).toLocaleString()}</TableCell></TableRow>)}</TableBody></Table></TableContainer></Box>; }
+export function AgentSessionsPage() {
+  const sessions = useQuery({
+    queryKey: ["agent-chat", "sessions"],
+    queryFn: getAgentSessions,
+  });
+  return (
+    <Box>
+      <Header title="Chat Sessions" />
+      <State
+        loading={sessions.isLoading}
+        error={sessions.error as Error | null}
+      />
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {[
+                "Session",
+                "Title",
+                "Audience",
+                "Status",
+                "Case",
+                "Created",
+              ].map((x) => (
+                <TableCell key={x}>{x}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sessions.data?.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <Link to={`/agent-chat/sessions/${item.id}`}>
+                    {item.session_id}
+                  </Link>
+                </TableCell>
+                <TableCell>{item.title}</TableCell>
+                <TableCell>{item.audience}</TableCell>
+                <TableCell>{item.status}</TableCell>
+                <TableCell>{item.case?.case_id}</TableCell>
+                <TableCell>
+                  {new Date(item.created_at).toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+}
 
-function SessionView({ session, onSend, sending, useRealModel, onToggleRealModel }: { session: AgentSession; onSend: (text: string) => void; sending: boolean; useRealModel: boolean; onToggleRealModel: (value: boolean) => void }) { const [text, setText] = useState(""); const knowledge = session.evidence.filter((item) => item.evidence_type === "KNOWLEDGE_CHUNK" || item.evidence_type === "KNOWN_ERROR"); return <><Card sx={{ mb: 3 }}><CardContent><Typography variant="h5">{session.title}</Typography><Typography color="text.secondary">{session.session_id} · {session.case.case_type} · {session.case.stage_mode}</Typography><Chip sx={{ mt: 1 }} label={session.status} />{(getExperienceCode() === "full" || getExperienceCode() === "agentic") && <FormControlLabel sx={{ display: "block", mt: 1 }} control={<Checkbox checked={useRealModel} onChange={(event) => onToggleRealModel(event.target.checked)} />} label="Use governed real model if enabled" />}</CardContent></Card><Grid container spacing={3}><Grid size={{ xs: 12, md: 7 }}><Typography variant="h5" sx={{ mb: 1 }}>Conversation</Typography>{session.messages.map((message) => <Paper key={message.id} sx={{ p: 2, mb: 1, bgcolor: message.sender_type === "AGENT" ? "#eef5ff" : "white" }}><Typography variant="caption" color="text.secondary">{message.sender_type} · {message.generation_mode}</Typography><Typography sx={{ whiteSpace: "pre-wrap", mt: 1 }}>{message.message_text}</Typography></Paper>)}{session.status === "ACTIVE" && <Box sx={{ display: "flex", gap: 1, mt: 2 }}><TextField fullWidth label="Ask the agent" value={text} onChange={(e) => setText(e.target.value)} /><Button variant="contained" disabled={sending || !text} onClick={() => { onSend(text); setText(""); }}>Send</Button></Box>}</Grid><Grid size={{ xs: 12, md: 5 }}><Typography variant="h5">Evidence</Typography>{session.evidence.map((item) => <Paper key={item.id} sx={{ p: 1.5, my: 1 }}><Typography fontWeight={700}>{item.evidence_type}: {item.title}</Typography><Typography variant="body2">{item.summary}</Typography></Paper>)}<Typography variant="h5" sx={{ mt: 3 }}>Relevant Knowledge</Typography>{knowledge.length ? knowledge.map((item) => <Paper key={`knowledge-${item.id}`} sx={{ p: 1.5, my: 1 }}><Typography fontWeight={700}>{item.evidence_type}: {item.title}</Typography><Typography variant="body2">{item.summary}</Typography></Paper>) : <Typography color="text.secondary">No knowledge evidence retrieved yet.</Typography>}<Typography variant="h5" sx={{ mt: 3 }}>Orchestration Runs</Typography>{session.orchestration_runs.map((run) => <Paper key={run.id} sx={{ p: 1.5, my: 1 }}><Typography>{run.run_id} · {run.status}</Typography><Typography variant="body2">{run.summary}</Typography></Paper>)}<Typography variant="h5" sx={{ mt: 3 }}>Action Proposals</Typography>{session.action_proposals.map((proposal) => <Paper key={proposal.id} sx={{ p: 1.5, my: 1 }}><Typography>{proposal.title}</Typography><Typography variant="body2">{proposal.execution_status} · approval required: {proposal.requires_approval ? "yes" : "no"}</Typography></Paper>)}</Grid></Grid></>; }
+function SessionView({
+  session,
+  onSend,
+  sending,
+  useRealModel,
+  onToggleRealModel,
+}: {
+  session: AgentSession;
+  onSend: (text: string) => void;
+  sending: boolean;
+  useRealModel: boolean;
+  onToggleRealModel: (value: boolean) => void;
+}) {
+  const [text, setText] = useState("");
+  const knowledge = session.evidence.filter(
+    (item) =>
+      item.evidence_type === "KNOWLEDGE_CHUNK" ||
+      item.evidence_type === "KNOWN_ERROR",
+  );
+  return (
+    <>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h5">{session.title}</Typography>
+          <Typography color="text.secondary">
+            {session.session_id} · {session.case.case_type} ·{" "}
+            {session.case.stage_mode}
+          </Typography>
+      <Chip sx={{ mt: 1 }} label={session.status} />
+      <InvestigationSource session={session} />
+          {(getExperienceCode() === "full" ||
+            getExperienceCode() === "agentic") && (
+            <FormControlLabel
+              sx={{ display: "block", mt: 1 }}
+              control={
+                <Checkbox
+                  checked={useRealModel}
+                  onChange={(event) => onToggleRealModel(event.target.checked)}
+                />
+              }
+              label="Use governed real model if enabled"
+            />
+          )}
+        </CardContent>
+      </Card>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Typography variant="h5" sx={{ mb: 1 }}>
+            Conversation
+          </Typography>
+          {session.messages.map((message) => (
+            <Paper
+              key={message.id}
+              sx={{
+                p: 2,
+                mb: 1,
+                bgcolor: message.sender_type === "AGENT" ? "#eef5ff" : "white",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                {message.sender_type} · {message.generation_mode}
+              </Typography>
+              <Typography sx={{ whiteSpace: "pre-wrap", mt: 1 }}>
+                {message.message_text}
+              </Typography>
+            </Paper>
+          ))}
+          {session.status === "ACTIVE" && (
+            <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Ask the agent"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+              <Button
+                variant="contained"
+                disabled={sending || !text}
+                onClick={() => {
+                  onSend(text);
+                  setText("");
+                }}
+              >
+                Send
+              </Button>
+            </Box>
+          )}
+        </Grid>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Typography variant="h5">Evidence</Typography>
+          {session.evidence.map((item) => (
+            <Paper key={item.id} sx={{ p: 1.5, my: 1 }}>
+              <Typography fontWeight={700}>
+                {item.evidence_type}: {item.title}
+              </Typography>
+              <Typography variant="body2">{item.summary}</Typography>
+            </Paper>
+          ))}
+          <Typography variant="h5" sx={{ mt: 3 }}>
+            Relevant Knowledge
+          </Typography>
+          {knowledge.length ? (
+            knowledge.map((item) => (
+              <Paper key={`knowledge-${item.id}`} sx={{ p: 1.5, my: 1 }}>
+                <Typography fontWeight={700}>
+                  {item.evidence_type}: {item.title}
+                </Typography>
+                <Typography variant="body2">{item.summary}</Typography>
+              </Paper>
+            ))
+          ) : (
+            <Typography color="text.secondary">
+              No knowledge evidence retrieved yet.
+            </Typography>
+          )}
+          <Typography variant="h5" sx={{ mt: 3 }}>
+            Orchestration Runs
+          </Typography>
+          {session.orchestration_runs.map((run) => (
+            <Paper key={run.id} sx={{ p: 1.5, my: 1 }}>
+              <Typography>
+                {run.run_id} · {run.status}
+              </Typography>
+              <Typography variant="body2">{run.summary}</Typography>
+            </Paper>
+          ))}
+          <Typography variant="h5" sx={{ mt: 3 }}>
+            Action Proposals
+          </Typography>
+          {session.action_proposals.map((proposal) => (
+            <Paper key={proposal.id} sx={{ p: 1.5, my: 1 }}>
+              <Typography>{proposal.title}</Typography>
+              <Typography variant="body2">
+                {proposal.execution_status} · approval required:{" "}
+                {proposal.requires_approval ? "yes" : "no"}
+              </Typography>
+            </Paper>
+          ))}
+        </Grid>
+      </Grid>
+    </>
+  );
+}
 
-export function AgentSessionDetailPage() { const { sessionId = "" } = useParams(); const qc = useQueryClient(); const [useRealModel, setUseRealModel] = useState(false); const session = useQuery({ queryKey: ["agent-chat", "session", sessionId], queryFn: () => getAgentSession(sessionId), enabled: Boolean(sessionId) }); const send = useMutation({ mutationFn: (text: string) => sendAgentMessage(sessionId, text, { use_real_model: useRealModel, provider_code: useRealModel ? "OPENAI_RESPONSES" : undefined, model_code: useRealModel ? "OPENAI_GPT_5_4_MINI" : undefined }), onSuccess: () => void qc.invalidateQueries({ queryKey: ["agent-chat", "session", sessionId] }) }); const close = useMutation({ mutationFn: () => closeAgentSession(sessionId), onSuccess: () => void qc.invalidateQueries({ queryKey: ["agent-chat", "session", sessionId] }) }); return <Box><Header title="Agent Chat Session" /><State loading={session.isLoading} error={session.error as Error | null} />{session.data && <><Box sx={{ mb: 2 }}><Button variant="outlined" disabled={session.data.status !== "ACTIVE" || close.isPending} onClick={() => close.mutate()}>Close Session</Button></Box><SessionView session={session.data} onSend={(text) => send.mutate(text)} sending={send.isPending} useRealModel={useRealModel} onToggleRealModel={setUseRealModel} /></>}</Box>; }
+export function AgentSessionDetailPage() {
+  const { sessionId = "" } = useParams();
+  const qc = useQueryClient();
+  const [useRealModel, setUseRealModel] = useState(false);
+  const session = useQuery({
+    queryKey: ["agent-chat", "session", sessionId],
+    queryFn: () => getAgentSession(sessionId),
+    enabled: Boolean(sessionId),
+  });
+  const send = useMutation({
+    mutationFn: (text: string) =>
+      sendAgentMessage(sessionId, text, {
+        use_real_model: useRealModel,
+        provider_code: useRealModel ? "OPENAI_RESPONSES" : undefined,
+        model_code: useRealModel ? "OPENAI_GPT_5_4_MINI" : undefined,
+      }),
+    onSuccess: () =>
+      void qc.invalidateQueries({
+        queryKey: ["agent-chat", "session", sessionId],
+      }),
+  });
+  const close = useMutation({
+    mutationFn: () => closeAgentSession(sessionId),
+    onSuccess: () =>
+      void qc.invalidateQueries({
+        queryKey: ["agent-chat", "session", sessionId],
+      }),
+  });
+  return (
+    <Box>
+      <Header title="Agent Chat Session" />
+      <State
+        loading={session.isLoading}
+        error={session.error as Error | null}
+      />
+      {session.data && (
+        <>
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="outlined"
+              disabled={session.data.status !== "ACTIVE" || close.isPending}
+              onClick={() => close.mutate()}
+            >
+              Close Session
+            </Button>
+          </Box>
+          <SessionView
+            session={session.data}
+            onSend={(text) => send.mutate(text)}
+            sending={send.isPending}
+            useRealModel={useRealModel}
+            onToggleRealModel={setUseRealModel}
+          />
+        </>
+      )}
+    </Box>
+  );
+}

@@ -559,6 +559,23 @@ availability, prompt/version governance, and eventual RAG/tool/action layers
 remain separately governed. Prompt 20 does not add vector RAG, ServiceNow,
 authentication, autonomous remediation, or external calls by default.
 
+## Contextual agent investigation handoff
+
+Prompt 21 adds a handoff boundary from operational source objects into Agent
+Chat and Case Intake. A source-specific intake resolves the source record,
+writes generic source metadata on `agent_cases`, links existing IDs where
+available, creates or reuses an active session, and invokes deterministic Stage
+1 orchestration. The orchestrator gathers source evidence and deterministic
+knowledge before appending guidance.
+
+Supported sources are AMS tickets, observability alert events, batch runs, user
+reports, diagnostic cases, monitoring triage cases, and operations exceptions.
+An active case is reused for the same source object. Operations and Agentic
+BFFs expose operational handoffs, Business exposes user-report handoff, and
+Simulation remains isolated. This is a demo/API boundary, not authorization;
+Prompt 21 does not enable real models, execute actions, integrate ServiceNow,
+or change infrastructure.
+
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,

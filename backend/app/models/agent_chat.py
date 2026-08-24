@@ -34,6 +34,10 @@ class AgentCase(TimestampMixin, Base):
     linked_order_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("wf_orders.id"))
     linked_shipment_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("wf_shipments.id"))
     linked_inventory_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("wf_items.id"))
+    source_object_type: Mapped[Optional[str]] = mapped_column(String(50))
+    source_object_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid(as_uuid=True))
+    source_object_display: Mapped[Optional[str]] = mapped_column(String(200))
+    source_object_url: Mapped[Optional[str]] = mapped_column(String(500))
     closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     sessions: Mapped[list["AgentChatSession"]] = relationship(back_populates="case", cascade="all, delete-orphan")

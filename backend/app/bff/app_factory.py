@@ -90,7 +90,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
     if definition.code == "business":
         application.include_router(business_router)
         _include_group(application, "warehouse")
-        _include_group(application, "agent_chat", ("/api/v1/agent-chat/summary", "/api/v1/agent-chat/intake/user-issue", "/api/v1/agent-chat/sessions"))
+        _include_group(application, "agent_chat", ("/api/v1/agent-chat/summary", "/api/v1/agent-chat/intake/user-issue", "/api/v1/agent-chat/intake/from-user-report", "/api/v1/agent-chat/sessions"))
         _include_group(application, "agent_knowledge", ("/api/v1/agent-knowledge/summary", "/api/v1/agent-knowledge/search"))
     elif definition.code == "operations":
         application.include_router(operations_facade_router)
@@ -118,6 +118,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "observability")
         _include_group(application, "observability_stack")
         _include_group(application, "observability_alerts")
+        _include_group(application, "agent_chat", ("/api/v1/agent-chat/intake/from-observability-alert", "/api/v1/agent-chat/intake/from-diagnostic-case"))
     elif definition.code == "agentic":
         application.include_router(agentic_router)
         _include_group(application, "copilot")

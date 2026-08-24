@@ -174,6 +174,16 @@ async def test_agent_chat_bff_route_boundaries(each_bff_client):
 
 
 @pytest.mark.anyio
+async def test_contextual_handoff_bff_boundaries(each_bff_client):
+    client, code = each_bff_client
+    response = await client.post("/api/v1/agent-chat/intake/from-ams-ticket/00000000-0000-0000-0000-000000000000", json={})
+    if code in ("operations", "agentic"):
+        assert response.status_code == 404  # route is exposed; the source record is absent
+    else:
+        assert response.status_code == 404
+
+
+@pytest.mark.anyio
 async def test_agent_knowledge_bff_route_boundaries(each_bff_client):
     client, code = each_bff_client
     response = await client.get("/api/v1/agent-knowledge/summary")
