@@ -345,13 +345,49 @@ Agentic Support Console     :4015 → copilot and governed AI configuration
 ```
 
 Each mode reuses the existing page components and API clients. The mode
-startup wrappers set the experience code, shared API URL (`8050`), and Vite
-port; they do not start additional backend services. The observability control
-plane links to Grafana as the primary UI and exposes only EOS helper views.
+startup wrappers set the experience code, frontend port, and API boundary:
+the full mode uses `8050`, while business, operations, simulation,
+observability, and agentic use `8061` through `8065`. Prompt 14's frontend
+segregation is therefore preserved while Prompt 15 supplies the corresponding
+local backend boundaries. The observability control plane links to Grafana as
+the primary UI and exposes only EOS helper views.
 
 This is intentionally frontend-first. Prompt 15 is the next boundary where
 separate backend/BFF ownership can be introduced without changing the current
 shared API contract.
+
+## Backend boundary and BFF segregation
+
+Prompt 15 adds five FastAPI BFF entrypoints without splitting the repository,
+database, or physical deployment units. `app/bff/experience_registry.py`
+defines the local topology and frontend origins. `app/bff/app_factory.py`
+builds each application with the shared lifecycle, request/correlation
+middleware, CORS, runtime telemetry middleware, exception handling, platform
+metadata, and only the selected router groups.
+
+```text
+8050 full backend          → all existing EOS APIs
+8061 business BFF          → business facade + warehouse APIs
+8062 operations BFF        → exceptions, AMS, monitoring, triage, support reads
+8063 simulation BFF        → synthetic, batch, monitoring/observability simulations
+8064 observability BFF    → runtime, evidence, stack, and diagnostics APIs
+8065 agentic BFF          → copilot and governed AI configuration APIs
+```
+
+All BFFs expose `/health` with experience metadata and the shared platform
+metadata routes. Experience-specific facade summaries provide a stable place
+for future BFF evolution while currently delegating to existing service logic.
+The full backend remains backward-compatible and continues to expose every
+prior route. Each specialized BFF uses only its matching frontend origins for
+CORS; this is boundary configuration, not authentication or authorization.
+
+The BFFs share the existing PostgreSQL and Redis resources and are started as
+separate local Uvicorn processes using `backend/start_*_bff.sh`. No new Docker
+services, migrations, or independent deployable units are introduced. Prompt
+15 is intentionally a runtime boundary foundation; a future physical split
+can place the Operations BFF beside ServiceNow integration and the Agentic BFF
+beside agent orchestration without changing the current business application
+boundary.
 
 ## Deferred items
 

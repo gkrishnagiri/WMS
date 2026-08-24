@@ -791,9 +791,9 @@ cd frontend
 ./start_agentic_frontend.sh       # 4015
 ```
 
-Each script sets `VITE_EOS_EXPERIENCE` and defaults the shared API URL to
-`http://localhost:8050`. The backend remains shared on port `8050`; no new
-backend service or Docker Compose change is required for Prompt 14.
+Each script sets `VITE_EOS_EXPERIENCE`, the appropriate frontend port, and the
+corresponding local API boundary. The full mode uses `http://localhost:8050`;
+specialized modes use the Prompt 15 BFFs on `8061` through `8065`.
 
 Experience-specific route groups are:
 
@@ -810,8 +810,9 @@ Experience-specific route groups are:
   tests, dashboards, traces, logs, metrics, and diagnostics
 - Agentic: `/copilot/*`, `/ai-config/*`, and the future `/agentic` placeholder
 
-Prompt 14 deliberately does not split backend services. Prompt 15 can add
-backend/BFF boundaries after the URL and screen model is proven. Future Azure
+Prompt 14 deliberately did not split backend services. Prompt 15 adds local
+FastAPI BFF runtime boundaries without creating independent containers or
+repositories. Future Azure
 deployment may use Azure Monitor/Application Insights/Log Analytics (with
 Managed Grafana if desired), or the open-source Grafana/Prometheus/Tempo/Loki/
 OpenTelemetry stack. Open-source components may avoid license fees, but Azure
@@ -831,3 +832,50 @@ The mode scripts can then be opened at ports `4001`, `4011`, `4012`, `4013`,
 observability stack remain unchanged. Backend boundary/BFF segregation,
 authentication, authorization, and production deployment topology are
 deferred.
+
+## Prompt 15 backend boundary and BFF segregation
+
+Prompt 15 preserves the full platform backend at `http://localhost:8050` and
+adds five FastAPI entrypoints in the same backend codebase:
+
+| Experience | BFF URL | Frontend URL |
+| --- | --- | --- |
+| Business | `http://localhost:8061` | `http://localhost:4011` |
+| Operations | `http://localhost:8062` | `http://localhost:4012` |
+| Simulation Lab | `http://localhost:8063` | `http://localhost:4013` |
+| Observability Control | `http://localhost:8064` | `http://localhost:4014` |
+| Agentic Support | `http://localhost:8065` | `http://localhost:4015` |
+
+The BFFs use `backend/app/bff/app_factory.py` and a shared experience
+registry. They reuse existing models, database sessions, middleware, and
+routers but expose only the route groups relevant to each experience. Every
+BFF provides `/health` and `/api/v1/platform/experiences`,
+`/api/v1/platform/current-experience`, and `/api/v1/platform/topology`.
+Facade summaries are available at `/api/v1/business/summary`,
+`/api/v1/operations-console/summary`, `/api/v1/simulation-lab/summary`,
+`/api/v1/observability-control/summary`, and
+`/api/v1/agentic-console/summary`.
+
+Start the full backend or a BFF with the executable scripts in `backend/`:
+
+```bash
+./start_full_backend.sh       # 8050
+./start_business_bff.sh       # 8061
+./start_operations_bff.sh     # 8062
+./start_simulation_bff.sh     # 8063
+./start_observability_bff.sh  # 8064
+./start_agentic_bff.sh        # 8065
+```
+
+The full backend retains all routes. BFFs are local API boundaries, not
+security controls: authentication and authorization are intentionally absent.
+The database and codebase remain shared, and no Docker Compose changes or
+additional containers are required. With `OTEL_ENABLED=true`, BFF scripts use
+distinct service names (`eos-business-bff`, `eos-operations-bff`,
+`eos-simulation-bff`, `eos-observability-bff`, and `eos-agentic-bff`).
+
+Prompt 15 validation includes the existing seed/test/build commands plus live
+health, platform metadata, facade, disallowed-route, and CORS preflight checks
+for each frontend/BFF pair. ServiceNow placement for the Operations Console,
+agent orchestration placement, physical deployment separation, and production
+network policy remain future work.

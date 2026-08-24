@@ -15,6 +15,8 @@ from app.api.routes.synthetic_users import router as synthetic_users_router
 from app.api.routes.system import router as system_router
 from app.api.routes.user_reports import router as user_reports_router
 from app.api.routes.warehouse import router as warehouse_router
+from app.api.routes.facades import facade_router
+from app.api.routes.platform import router as platform_router
 
 router = APIRouter()
 router.include_router(system_router)
@@ -30,3 +32,5 @@ router.include_router(runtime_observability_router)
 router.include_router(observability_stack_router)
 router.include_router(batch_router)
 router.include_router(copilot_router)
+router.include_router(platform_router)
+router.include_router(facade_router)

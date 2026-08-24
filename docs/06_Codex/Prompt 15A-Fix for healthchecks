@@ -1,0 +1,26 @@
+Fix Prompt 15 BFF health response shape.
+
+Issue:
+All BFF ports are running, but /health on BFF ports does not appear to return the expected structured JSON object with experience metadata.
+
+Tasks:
+1. Ensure /health on each BFF returns a JSON object.
+2. Preserve the existing full backend /health backward compatibility on port 8050.
+3. For BFFs on 8061–8065, include:
+   - status
+   - application
+   - experience code
+   - experience name
+   - backend port
+   - database check if currently available
+   - redis check if currently available
+4. Do not modify docker-compose.yml.
+5. Do not add migrations.
+6. Do not introduce auth, ServiceNow, external LLMs, or agents.
+7. Add/update tests for BFF /health response shape.
+8. Run backend tests.
+
+Validation:
+- pytest
+- curl http://localhost:8061/health | jq .
+- curl http://localhost:8065/health | jq .
