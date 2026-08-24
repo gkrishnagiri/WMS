@@ -5,6 +5,6 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
 export VITE_EOS_EXPERIENCE=operations
-export VITE_API_BASE_URL=http://localhost:8050
+export VITE_API_BASE_URL=http://localhost:8062
 export FRONTEND_PORT="${FRONTEND_PORT:-4012}"
 exec ./start_frontend.sh

@@ -879,3 +879,49 @@ health, platform metadata, facade, disallowed-route, and CORS preflight checks
 for each frontend/BFF pair. ServiceNow placement for the Operations Console,
 agent orchestration placement, physical deployment separation, and production
 network policy remain future work.
+
+## Prompt 16 demo stack orchestration and control panel
+
+Prompt 16 adds PID-owned local orchestration for the Docker infrastructure,
+full backend, five BFFs, and six frontend experiences. The scripts are safe to
+run from any directory and keep runtime metadata and logs outside the
+repository:
+
+```text
+/tmp/eos-demo/*.pid
+/tmp/eos-demo/logs/*.log
+```
+
+Use these commands from the project root:
+
+```bash
+./scripts/start-demo-stack.sh
+./scripts/status-demo-stack.sh
+./scripts/validate-demo-stack.sh
+./scripts/stop-demo-stack.sh
+```
+
+`stop-demo-stack.sh` stops only processes with matching PID records created by
+the orchestration scripts. It leaves Docker infrastructure running by
+default; use `./scripts/stop-demo-stack.sh --with-infra` to also run
+`docker compose down`. Infrastructure-only controls are available through
+`start-infra.sh` and `stop-infra.sh` (`--volumes` is opt-in). Existing healthy
+processes on expected ports are reused, while occupied ports are reported as
+conflicts rather than being killed.
+
+The full UI includes a read-only control panel at
+`http://localhost:4001/demo-control`. It displays experience topology,
+backend/frontend URLs, infrastructure and observability links, readiness
+checks, and terminal command snippets. The page never starts or stops OS
+processes and does not execute shell commands. Its APIs are:
+
+- `GET /api/v1/demo-control/summary`
+- `GET /api/v1/demo-control/components`
+- `GET /api/v1/demo-control/urls`
+- `GET /api/v1/demo-control/readiness`
+
+The full demo stack retains the existing ports: UI `4001`, BFF/frontend pairs
+`8061/4011` through `8065/4015`, PostgreSQL `15432`, Redis `6379`, Prometheus
+`9090`, Grafana `3001`, Tempo `3200`, Loki `3100`, and Collector ports
+`4317`/`4318`/`13133`. Prompt 13 observability, Prompt 14 frontend
+segregation, and Prompt 15 BFF boundaries remain unchanged.

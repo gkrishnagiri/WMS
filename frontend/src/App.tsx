@@ -15,12 +15,14 @@ import { AiConfigOverviewPage, AiInvocationsPage, AiPromptsPage, AiProvidersPage
 import { RuntimeObservabilityOverviewPage, RuntimeTraceDetailPage, RuntimeTracesPage } from "./pages/RuntimeObservabilityPages";
 import { ObservabilityDashboardsPage, ObservabilityStackHealthPage, ObservabilityStackOverviewPage, ObservabilityStackTestPage } from "./pages/ObservabilityStackPages";
 import { ExperienceRootPage } from "./pages/ExperienceHomePage";
+import { DemoControlPage } from "./pages/DemoControlPage";
 
 export default function App() {
   return (
     <AppShell>
       <Routes>
         <Route path="/" element={<ExperienceRootPage />} />
+        <Route path="/demo-control" element={<DemoControlPage />} />
         <Route path="/health" element={<HealthPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/warehouse" element={<WarehousePage />} />

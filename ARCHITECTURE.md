@@ -356,6 +356,34 @@ This is intentionally frontend-first. Prompt 15 is the next boundary where
 separate backend/BFF ownership can be introduced without changing the current
 shared API contract.
 
+## Demo stack orchestration and control panel
+
+Prompt 16 adds local operational orchestration around the existing shared
+runtime. `scripts/start-demo-stack.sh` starts infrastructure, then the full
+backend and five BFFs, then the six frontend modes. `status-demo-stack.sh`
+reports Docker, process, HTTP, and observability endpoint status;
+`validate-demo-stack.sh` performs the complete smoke check; and
+`stop-demo-stack.sh` stops application processes before optionally stopping
+Docker with `--with-infra`.
+
+The scripts resolve the repository root from their own location and store
+process records and logs under `/tmp/eos-demo`. Each PID record contains the
+process ID and Linux process start time. Shutdown verifies both the recorded
+start time and an expected command marker before sending `TERM`, so stale
+records and unrelated processes are not broadly killed. Healthy unmanaged
+processes are reused by startup and are not claimed or stopped by the scripts.
+
+The full backend exposes a read-only `/api/v1/demo-control` API for summary,
+component, URL, and readiness data. It performs short, bounded HTTP/TCP checks
+for the local stack and never invokes shell commands or reads arbitrary local
+files. The full frontend's `/demo-control` page presents this information,
+links to every experience and observability service, and terminal command
+snippets. It has no start/stop controls and cannot manage OS processes.
+
+This remains local-demo orchestration. A future phase may use containerized or
+environment-level orchestration, but Prompt 16 does not add new services,
+authentication, ServiceNow, external LLMs, or autonomous remediation.
+
 ## Backend boundary and BFF segregation
 
 Prompt 15 adds five FastAPI BFF entrypoints without splitting the repository,

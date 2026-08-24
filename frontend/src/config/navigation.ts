@@ -10,6 +10,7 @@ const allExperiences: ExperienceCode[] = ["full", "business", "operations", "sim
 
 export const navigation: NavigationItem[] = [
   { label: "Dashboard", path: "/", experiences: allExperiences },
+  { label: "Demo Control", path: "/demo-control", experiences: ["full"] },
   { label: "Warehouse", path: "/warehouse", experiences: ["full", "business"] },
   { label: "Inventory", path: "/warehouse/inventory", experiences: ["full", "business"] },
   { label: "Orders", path: "/warehouse/orders", experiences: ["full", "business"] },

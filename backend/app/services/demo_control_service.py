@@ -1,0 +1,118 @@
+"""Read-only status and topology helpers for the local EOS demo stack."""
+
+from __future__ import annotations
+
+import socket
+from datetime import datetime, timezone
+
+import httpx
+from fastapi import Request
+
+from app.bff.experience_registry import EXPERIENCE_DEFINITIONS
+from app.schemas.demo_control import DemoReadinessItem, DemoReadinessResponse
+
+
+OBSERVABILITY_URLS = {
+    "grafana": "http://localhost:3001",
+    "prometheus": "http://localhost:9090",
+    "tempo_ready": "http://localhost:3200/ready",
+    "loki_ready": "http://localhost:3100/ready",
+    "otel_collector_health": "http://localhost:13133/",
+}
+
+
+def _experience_payload() -> list[dict[str, str]]:
+    return [
+        {
+            "code": item.code,
+            "name": item.name,
+            "frontend_url": item.frontend_url,
+            "backend_url": item.backend_url,
+            "purpose": item.description,
+        }
+        for item in EXPERIENCE_DEFINITIONS.values()
+    ]
+
+
+def urls() -> dict[str, object]:
+    return {
+        "experiences": _experience_payload(),
+        "observability": OBSERVABILITY_URLS,
+        "logs_directory": "/tmp/eos-demo/logs",
+        "runtime_directory": "/tmp/eos-demo",
+    }
+
+
+def _http_item(name: str, kind: str, url: str, expected_status: int = 200) -> DemoReadinessItem:
+    try:
+        response = httpx.get(url, timeout=0.75)
+        healthy = response.status_code == expected_status
+        return DemoReadinessItem(
+            name=name,
+            kind=kind,
+            url=url,
+            expected_status=expected_status,
+            actual_status=response.status_code,
+            healthy=healthy,
+            message="reachable" if healthy else f"HTTP {response.status_code}",
+        )
+    except httpx.HTTPError as error:
+        return DemoReadinessItem(
+            name=name,
+            kind=kind,
+            url=url,
+            expected_status=expected_status,
+            healthy=False,
+            message=f"unreachable: {str(error)[:180]}",
+        )
+
+
+def _tcp_item(name: str, url: str, port: int) -> DemoReadinessItem:
+    try:
+        with socket.create_connection(("localhost", port), timeout=0.75):
+            return DemoReadinessItem(name=name, kind="infrastructure", url=url, expected_status="reachable", actual_status="reachable", healthy=True, message="TCP connection accepted")
+    except OSError as error:
+        return DemoReadinessItem(name=name, kind="infrastructure", url=url, expected_status="reachable", healthy=False, message=f"unreachable: {str(error)[:180]}")
+
+
+def readiness() -> DemoReadinessResponse:
+    items = [
+        _tcp_item("PostgreSQL", "tcp://localhost:15432", 15432),
+        _tcp_item("Redis", "tcp://localhost:6379", 6379),
+        _http_item("OpenTelemetry Collector", "infrastructure", OBSERVABILITY_URLS["otel_collector_health"]),
+        _http_item("Prometheus", "infrastructure", "http://localhost:9090/-/ready"),
+        _http_item("Grafana", "infrastructure", "http://localhost:3001/api/health"),
+        _http_item("Tempo", "infrastructure", OBSERVABILITY_URLS["tempo_ready"]),
+        _http_item("Loki", "infrastructure", OBSERVABILITY_URLS["loki_ready"]),
+    ]
+    for item in EXPERIENCE_DEFINITIONS.values():
+        items.append(_http_item(f"{item.name} backend", "backend", f"{item.backend_url}/health"))
+    for item in EXPERIENCE_DEFINITIONS.values():
+        items.append(_http_item(f"{item.name} frontend", "frontend", item.frontend_url))
+    return DemoReadinessResponse(
+        overall_status="HEALTHY" if all(item.healthy for item in items) else "DEGRADED",
+        checked_at=datetime.now(timezone.utc),
+        items=items,
+    )
+
+
+def summary(request: Request) -> dict[str, object]:
+    status = readiness()
+    return {
+        "application": request.app.state.settings.app_name,
+        "mode": "local-demo",
+        "summary": {"frontends": 6, "backends": 6, "infrastructure_components": 7},
+        "overall_status": status.overall_status,
+        "experiences": _experience_payload(),
+        "observability": {
+            "grafana": OBSERVABILITY_URLS["grafana"],
+            "prometheus": OBSERVABILITY_URLS["prometheus"],
+            "tempo_ready": OBSERVABILITY_URLS["tempo_ready"],
+            "loki_ready": OBSERVABILITY_URLS["loki_ready"],
+        },
+    }
+
+
+def components() -> dict[str, object]:
+    status = readiness()
+    return {"overall_status": status.overall_status, "components": [item.model_dump(mode="json") for item in status.items]}
