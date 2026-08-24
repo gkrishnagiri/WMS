@@ -437,6 +437,42 @@ model and does not provision Prometheus/Grafana rules or run a background
 scheduler. Future work includes external alert managers, production
 evaluation scheduling, and governed agentic handoff.
 
+## Agent chat and case intake
+
+Prompt 18 adds an agentic support data plane under `/api/v1/agent-chat`.
+`agent_cases` represent the issue boundary, `agent_chat_sessions` and
+`agent_chat_messages` preserve the conversation, `agent_orchestration_runs`
+audit each deterministic cycle, and `agent_evidence_items` preserve the
+support context gathered from linked and recent EOS artifacts. The
+`agent_action_proposals` table prepares for future approval-gated actions but
+does not execute anything in this phase.
+
+The `agent_orchestrator_service` is a transparent Stage 1 implementation. It
+classifies messages with simple linked-context and keyword rules, retrieves a
+bounded subset of AMS tickets, user reports, observability alerts and
+evidence, failed batches, diagnostics, and recent open support signals, then
+returns a structured response with Understanding, Relevant Evidence, Likely
+Cause, Recommended Next Steps, and What I Cannot Do Yet.
+
+Every case is `STAGE_1_READ_ONLY`; orchestration runs use
+`DETERMINISTIC_STAGE_1`, and any proposal is approval-required with execution
+status `DISABLED_IN_STAGE_1`. The implementation does not call a model,
+perform RAG/vector search, run shell commands, mutate business data, close a
+ticket, resolve an alert, or execute remediation. Business, Operations, and
+Agentic BFFs expose the appropriate chat surfaces while Simulation does not.
+
+The maturity path is intentionally explicit:
+
+```text
+Stage 1: read-only deterministic guidance (Prompt 18)
+Stage 2: approval-gated model/tool proposals and audited execution
+Stage 3: constrained autonomous remediation in an approved sandbox
+```
+
+Future orchestration can add governed real-model selection, RAG over runbooks,
+SOPs, KB articles and historical tickets, live read-only tools for current
+state, and separately governed action tools. Those layers remain deferred.
+
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,
@@ -447,7 +483,7 @@ notifications, ticket analytics, anomaly detection, root-cause
 inference, real OpenTelemetry SDK/export, Tempo, Loki, Prometheus scraping,
 Grafana dashboards, collector trace/log pipelines, distributed tracing,
 browser telemetry, external observability SaaS integration, LLM summaries,
-agent orchestration, AI-native diagnosis, governed external LLM execution,
+model-backed agent orchestration, AI-native diagnosis, governed external LLM execution,
 and autonomous remediation are deferred. Synthetic journey runs, monitoring
 alerts, simulated observability evidence, and runtime request telemetry are
 stored for audit. Prompt 13 now provides local external export, but production

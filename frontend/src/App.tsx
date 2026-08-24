@@ -17,6 +17,7 @@ import { ObservabilityDashboardsPage, ObservabilityStackHealthPage, Observabilit
 import { ExperienceRootPage } from "./pages/ExperienceHomePage";
 import { DemoControlPage } from "./pages/DemoControlPage";
 import { ObservabilityAlertEventDetailPage, ObservabilityAlertEvaluationRunsPage, ObservabilityAlertEventsPage, ObservabilityAlertRulesPage, ObservabilityAlertsPage } from "./pages/ObservabilityAlertPages";
+import { AgentCaseDetailPage, AgentCasesPage, AgentChatHomePage, AgentIntakePage, AgentSessionDetailPage, AgentSessionsPage } from "./pages/AgentChatPages";
 
 export default function App() {
   return (
@@ -29,6 +30,13 @@ export default function App() {
         <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />
         <Route path="/observability-alerts/events" element={<ObservabilityAlertEventsPage />} />
         <Route path="/observability-alerts/events/:eventId" element={<ObservabilityAlertEventDetailPage />} />
+        <Route path="/agent-chat" element={<AgentChatHomePage />} />
+        <Route path="/agent-chat/user" element={<AgentIntakePage />} />
+        <Route path="/agent-chat/engineer" element={<AgentIntakePage engineer />} />
+        <Route path="/agent-chat/cases" element={<AgentCasesPage />} />
+        <Route path="/agent-chat/cases/:caseId" element={<AgentCaseDetailPage />} />
+        <Route path="/agent-chat/sessions" element={<AgentSessionsPage />} />
+        <Route path="/agent-chat/sessions/:sessionId" element={<AgentSessionDetailPage />} />
         <Route path="/health" element={<HealthPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/warehouse" element={<WarehousePage />} />

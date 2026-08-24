@@ -956,3 +956,60 @@ check.
 This phase has no uncontrolled scheduler, Prometheus/Grafana alert-rule
 provisioning, ServiceNow integration, external LLM, authentication, or
 autonomous remediation.
+
+## Prompt 18 agent chat and case intake
+
+Prompt 18 adds a persisted agentic support intake foundation. Users and
+service engineers can open cases and chat sessions, submit messages, and
+receive deterministic Stage 1 guidance assembled from existing EOS support
+artifacts. The orchestrator stores evidence items and orchestration runs and
+may record review proposals, but proposals are always approval-required and
+`DISABLED_IN_STAGE_1`.
+
+Agent chat is available at:
+
+```text
+/agent-chat
+/agent-chat/user
+/agent-chat/engineer
+/agent-chat/cases
+/agent-chat/cases/:caseId
+/agent-chat/sessions
+/agent-chat/sessions/:sessionId
+```
+
+The APIs use `/api/v1/agent-chat`. The full backend exposes all endpoints;
+Business exposes user-facing intake and session routes, Operations exposes
+the investigation surface, and the Agentic BFF exposes the complete agent
+chat API. The Simulation BFF intentionally returns 404 for this support
+surface. Demo-control readiness includes Agent Chat, Agentic Case Intake,
+and the Stage 1 Orchestrator.
+
+The response format includes Understanding, Relevant Evidence, Likely Cause,
+Recommended Next Steps, and What I Cannot Do Yet. It explicitly remains
+read-only: there is no real LLM call, RAG/vector database, shell command,
+ticket closure, alert resolution, notification, or remediation execution.
+The future agent design can combine governed real-model selection, RAG over
+static runbooks, live read-only tools, and approval-gated action tools.
+
+Validate Prompt 18 with:
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_warehouse
+python -m app.db.seed_synthetic_users
+python -m app.db.seed_monitoring
+python -m app.db.seed_batch
+python -m app.db.seed_copilot
+python -m app.db.seed_ai_config
+python -m app.db.seed_observability_alerts
+pytest
+```
+
+The Agentic UI is `http://localhost:4015/agent-chat`, the Business user
+assistant is `http://localhost:4011/agent-chat/user`, the Operations engineer
+chat is `http://localhost:4012/agent-chat/engineer`, and the full UI remains
+at `http://localhost:4001`. All use the existing backend/BFF ports and no
+additional infrastructure.

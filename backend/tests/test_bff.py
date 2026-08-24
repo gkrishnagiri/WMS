@@ -159,6 +159,21 @@ async def test_observability_alert_route_boundaries(each_bff_client):
 
 
 @pytest.mark.anyio
+async def test_agent_chat_bff_route_boundaries(each_bff_client):
+    client, code = each_bff_client
+    summary = await client.get("/api/v1/agent-chat/summary")
+    if code in ("business", "operations", "agentic"):
+        assert summary.status_code == 200
+    else:
+        assert summary.status_code == 404
+    if code == "business":
+        intake = await client.post("/api/v1/agent-chat/intake/user-issue", json={"title": "Need help", "description": "User issue", "initial_message": "My order is stuck."})
+        assert intake.status_code == 201
+    elif code == "simulation":
+        assert (await client.post("/api/v1/agent-chat/intake/engineer-investigation", json={"title": "No access", "description": "Should be blocked", "initial_message": "Investigate this."})).status_code == 404
+
+
+@pytest.mark.anyio
 async def test_bff_cors_preflight_allows_its_frontend(each_bff_client):
     client, code = each_bff_client
     origin = get_experience(code).allowed_origins[0]

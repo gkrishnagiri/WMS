@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
 
-from app.api.routes import ai_config_router, ams_router, batch_router, copilot_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, user_reports_router, warehouse_router
+from app.api.routes import agent_chat_router, ai_config_router, ams_router, batch_router, copilot_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, user_reports_router, warehouse_router
 from app.api.routes.facades import agentic_router, business_router, observability_router as observability_facade_router, operations_router as operations_facade_router, simulation_router
 from app.api.routes.platform import router as platform_router
 from app.core.config import get_settings
@@ -32,6 +32,7 @@ ROUTERS = {
     "runtime_observability": runtime_observability_router,
     "observability_stack": observability_stack_router,
     "observability_alerts": observability_alerts_router,
+    "agent_chat": agent_chat_router,
     "batch": batch_router,
     "copilot": copilot_router,
     "ai_config": ai_config_router,
@@ -88,6 +89,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
     if definition.code == "business":
         application.include_router(business_router)
         _include_group(application, "warehouse")
+        _include_group(application, "agent_chat", ("/api/v1/agent-chat/summary", "/api/v1/agent-chat/intake/user-issue", "/api/v1/agent-chat/sessions"))
     elif definition.code == "operations":
         application.include_router(operations_facade_router)
         _include_group(application, "operations", ("/api/v1/operations/exceptions",))
@@ -98,6 +100,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "observability", ("/api/v1/observability/diagnostic-cases", "/api/v1/observability/diagnostics"))
         _include_group(application, "copilot", ("/api/v1/copilot/sessions",))
         _include_group(application, "observability_alerts")
+        _include_group(application, "agent_chat")
     elif definition.code == "simulation":
         application.include_router(simulation_router)
         _include_group(application, "synthetic_users")
@@ -115,6 +118,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         application.include_router(agentic_router)
         _include_group(application, "copilot")
         _include_group(application, "ai_config")
+        _include_group(application, "agent_chat")
     else:
         raise ValueError(f"Unsupported BFF experience: {definition.code}")
 
