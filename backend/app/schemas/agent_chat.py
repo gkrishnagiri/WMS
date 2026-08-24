@@ -35,6 +35,10 @@ class AgentMessageCreate(BaseModel):
     message_text: str = Field(min_length=1, max_length=6000)
     sender_type: str = "SERVICE_ENGINEER"
     sender_role: str | None = None
+    use_real_model: bool = False
+    provider_code: str | None = Field(default=None, max_length=100)
+    model_code: str | None = Field(default=None, max_length=120)
+    dry_run: bool = False
 
 
 class AgentIntakeRequest(BaseModel):
@@ -167,4 +171,3 @@ class AgentChatSessionResponse(BaseModel):
     evidence: list[AgentEvidenceResponse] = Field(default_factory=list)
     orchestration_runs: list[AgentRunResponse] = Field(default_factory=list)
     action_proposals: list[AgentActionProposalResponse] = Field(default_factory=list)
-

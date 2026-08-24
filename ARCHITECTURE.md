@@ -505,6 +505,60 @@ Prompt 19 implements only the catalog, chunking, deterministic retrieval, and
 audit foundation. It does not call a real model, create embeddings, use a
 vector database, ingest ServiceNow knowledge, or execute remediation.
 
+## Governed real-model provider foundation
+
+Prompt 20 extends the AI configuration plane with an optional
+`OPENAI_RESPONSES` provider adapter. It reuses the provider, model, prompt,
+safety, invocation, guardrail, and usage tables already present, so no new
+schema migration is needed. The provider and `OPENAI_GPT_5_4_MINI` catalog
+model are seeded disabled; the deterministic `MOCK_GOVERNED` provider remains
+the only default executable path.
+
+The gateway resolves a catalog provider/model/template, evaluates the input
+against the governed safety policy, and only then considers an external call.
+The real path additionally requires `REAL_MODEL_ENABLED=true`, explicit
+`allow_real_model=true`, enabled catalog records, and a non-empty
+`OPENAI_API_KEY`. The key is environment-only and is never persisted,
+returned, or logged. The OpenAI SDK is imported lazily so disabled startup,
+tests, seeds, and the demo stack do not require a key or network access.
+
+Every dry-run, disabled, blocked, failed, or successful attempt is represented
+by an existing AI invocation audit row. Mode, fallback, external request ID,
+and usage metadata are stored only in the sanitized invocation JSON; token and
+cost accounting continues through `ai_usage_daily`. Response output is
+checked for unsafe claims such as executed actions or secret requests. A
+blocked response is replaced with a safe fallback and a guardrail event.
+
+Agent chat remains deterministic by default. An explicit Agentic/Full chat
+request can select the governed real path, but the orchestrator still uses
+curated operational/knowledge context, remains `STAGE_1_READ_ONLY`, keeps
+`actions_executed=0`, and falls back to deterministic guidance whenever the
+provider is disabled, unavailable, or blocked. No model receives tools or can
+change EOS data.
+
+Prompt 20 adds status, dry-run, and controlled test routes below
+`/api/v1/ai-config/real-model`. Full and Agentic BFFs expose the complete
+surface; Operations exposes status and dry-run; Business, Simulation, and
+Observability do not expose real-model administration. The UI exposes status
+and test controls without an API-key input. This is a provider integration
+foundation, not an enablement of unrestricted model use.
+
+The future path is:
+
+```text
+curated case/evidence/knowledge context -> governed prompt template
+                                       -> safety pre-check
+                                       -> optional real provider adapter
+                                       -> safety post-check
+                                       -> invocation/usage audit
+                                       -> human-reviewed Stage 1 response
+```
+
+Real model selection, external credentials, production cost limits, model
+availability, prompt/version governance, and eventual RAG/tool/action layers
+remain separately governed. Prompt 20 does not add vector RAG, ServiceNow,
+authentication, autonomous remediation, or external calls by default.
+
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,

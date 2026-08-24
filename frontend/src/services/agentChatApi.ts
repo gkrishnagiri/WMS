@@ -19,5 +19,5 @@ export const getAgentRuns = (id: string) => request<AgentRun[]>(`/api/v1/agent-c
 export const getAgentProposals = (id: string) => request<AgentProposal[]>(`/api/v1/agent-chat/cases/${id}/action-proposals`);
 export const intakeUserIssue = (payload: { title: string; description: string; initial_message: string }) => request<AgentSession>("/api/v1/agent-chat/intake/user-issue", { method: "POST", body: JSON.stringify(payload) });
 export const intakeEngineerIssue = (payload: { title: string; description: string; initial_message: string }) => request<AgentSession>("/api/v1/agent-chat/intake/engineer-investigation", { method: "POST", body: JSON.stringify(payload) });
-export const sendAgentMessage = (id: string, message_text: string) => request<AgentSession>(`/api/v1/agent-chat/sessions/${id}/messages`, { method: "POST", body: JSON.stringify({ message_text }) });
+export const sendAgentMessage = (id: string, message_text: string, options: { use_real_model?: boolean; provider_code?: string; model_code?: string; dry_run?: boolean } = {}) => request<AgentSession>(`/api/v1/agent-chat/sessions/${id}/messages`, { method: "POST", body: JSON.stringify({ message_text, ...options }) });
 export const closeAgentSession = (id: string) => request<AgentSession>(`/api/v1/agent-chat/sessions/${id}/close`, { method: "POST" });

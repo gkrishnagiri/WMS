@@ -11,6 +11,8 @@ export interface UsageDaily { id: string; usage_date: string; provider_code: str
 export interface AiConfigSummary { providers: number; enabled_providers: number; models: number; enabled_models: number; prompt_templates: number; safety_policies: number; safety_rules: number; invocations_today: number; blocked_invocations_today: number; estimated_tokens_today: number; estimated_cost_today: number; }
 export interface SafetyMatch { rule_code: string; name: string; action: string; severity: string; message: string; }
 export interface SafetyCheck { decision: string; safety_status: string; matched_rules: SafetyMatch[]; message: string; }
+export interface RealModelStatus { real_model_enabled: boolean; provider_code: string; model_code: string; default_model: string; provider_configured: boolean; model_configured: boolean; api_key_present: boolean; provider_enabled: boolean; model_enabled: boolean; safe_to_invoke: boolean; reason: string; }
+export interface RealModelInvocation { invocation_id: string | null; invocation_number: string | null; provider_code: string; model_code: string; generation_mode: string; status: string; safety_status: string; output_text: string | null; fallback_used: boolean; external_request_id: string | null; latency_ms: number; usage: Record<string, number>; error_message: string | null; notes: string[]; }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> { const response = await fetch(apiBaseUrl + path, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(`AI Config API returned ${response.status}: ${typeof body === "object" && body?.detail ? body.detail : "request failed"}`); return body as T; }
 export const getAiConfigSummary = () => request<AiConfigSummary>("/api/v1/ai-config/summary");
@@ -25,3 +27,6 @@ export const getUsageDaily = () => request<UsageDaily[]>("/api/v1/ai-config/usag
 export const getGuardrailEvents = () => request<GuardrailEvent[]>("/api/v1/ai-config/guardrail-events");
 export const runSafetyCheck = (text: string) => request<SafetyCheck>("/api/v1/ai-config/safety-check", { method: "POST", body: JSON.stringify({ text }) });
 export function runTestInvocation(payload: { task_type: string; input_payload: { message: string }; template_code: string; model_code: string; request_source: string }) { return request<Invocation>("/api/v1/ai-config/test-invocation", { method: "POST", body: JSON.stringify(payload) }); }
+export const getRealModelStatus = () => request<RealModelStatus>("/api/v1/ai-config/real-model/status");
+export const runRealModelDryRun = (payload: Record<string, unknown>) => request<RealModelInvocation>("/api/v1/ai-config/real-model/dry-run", { method: "POST", body: JSON.stringify(payload) });
+export const runRealModelTest = (payload: Record<string, unknown>) => request<RealModelInvocation>("/api/v1/ai-config/real-model/test", { method: "POST", body: JSON.stringify(payload) });

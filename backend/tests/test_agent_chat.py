@@ -57,6 +57,18 @@ async def test_send_message_and_close_session(agent_client):
 
 
 @pytest.mark.anyio
+async def test_agent_real_model_request_falls_back_safely_and_is_audited(agent_client):
+    created = await agent_client.post("/api/v1/agent-chat/intake/engineer-investigation", json={"title": "Investigate an order issue", "description": "Review the issue without changing data.", "initial_message": "The order is slow; what should I check?"})
+    session_id = created.json()["id"]
+    sent = await agent_client.post(f"/api/v1/agent-chat/sessions/{session_id}/messages", json={"message_text": "Use the governed real model if available.", "use_real_model": True})
+    assert sent.status_code == 200
+    agent_message = sent.json()["messages"][-1]
+    assert agent_message["generation_mode"] == "FALLBACK_DETERMINISTIC"
+    assert agent_message["metadata_json"]["ai_invocation_id"]
+    assert sent.json()["orchestration_runs"][-1]["actions_executed"] == 0
+
+
+@pytest.mark.anyio
 async def test_agent_summary_and_simulation_bff_boundary(agent_client):
     summary = await agent_client.get("/api/v1/agent-chat/summary")
     assert summary.status_code == 200

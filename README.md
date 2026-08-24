@@ -1050,3 +1050,59 @@ This is a RAG foundation only: retrieval is deterministic keyword matching,
 with no external LLM, embedding model, vector database, LangChain/LlamaIndex,
 or remediation execution. Future work can add hybrid vector retrieval,
 reranking, citations, document ingestion, and governed real-model generation.
+
+## Prompt 20 governed real-model provider foundation
+
+Prompt 20 adds an optional OpenAI-compatible Responses API adapter behind the
+existing governed AI gateway. The default remains `MOCK_GOVERNED` and
+deterministic Stage 1 guidance. A real call requires the feature flag, an
+enabled catalog provider and model, `allow_real_model=true`, a configured
+`OPENAI_API_KEY`, and a passed safety pre-check. The key is read from the
+process environment only; it is never stored in PostgreSQL or written to
+logs. Real provider failures and blocked outputs are audited and return a safe
+fallback where appropriate.
+
+Configuration is documented in `backend/.env.example`:
+
+```text
+REAL_MODEL_ENABLED=false
+OPENAI_API_KEY=
+OPENAI_BASE_URL=
+OPENAI_DEFAULT_MODEL=gpt-5.4-mini
+OPENAI_REQUEST_TIMEOUT_SECONDS=30
+OPENAI_MAX_OUTPUT_TOKENS=1200
+OPENAI_REASONING_EFFORT=low
+OPENAI_STORE_RESPONSES=false
+```
+
+Seed the disabled real provider/model catalog entry with:
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.db.seed_ai_config
+```
+
+The governed APIs are:
+
+```text
+GET  /api/v1/ai-config/real-model/status
+POST /api/v1/ai-config/real-model/dry-run
+POST /api/v1/ai-config/real-model/test
+GET  /api/v1/ai-config/real-model/providers
+GET  /api/v1/ai-config/real-model/models
+```
+
+Dry-run validates prompt and safety configuration without making an external
+call. The test endpoint remains controlled and normally returns a disabled
+safe fallback. Agent chat remains deterministic unless a service engineer
+explicitly requests the governed real-model path; even then, the case is
+`STAGE_1_READ_ONLY`, actions executed remain zero, and failed/disabled calls
+fall back safely. The real-model status page is available at
+`/ai-config/real-model` in the Full and Agentic UIs, with no API-key entry
+field.
+
+Prompt 20 does not add autonomous remediation, external model calls by
+default, RAG/vector storage, authentication, ServiceNow, or an agent
+framework. Optional manual real-model validation must be performed only with
+an intentionally supplied environment key and must never commit that key.

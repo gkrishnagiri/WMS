@@ -16,6 +16,8 @@ from app.models.observability import ObsDiagnosticCase
 from app.models.observability_alerts import ObsAlertEvent, ObsAlertEventEvidence
 from app.models.user_reports import AmsUserReport
 from app.schemas.agent_chat import AgentActionProposalResponse, AgentCaseCreate, AgentCaseResponse, AgentChatMessageResponse, AgentChatSessionResponse, AgentEvidenceResponse, AgentIntakeRequest, AgentMessageCreate, AgentRunResponse, AgentSessionCreate
+from app.schemas.ai_config import RealModelRequest
+from app.services import ai_provider_gateway
 from app.services import agent_knowledge_service
 
 STAGE_1 = "STAGE_1_READ_ONLY"
@@ -173,7 +175,7 @@ def _guidance(case: AgentCase, message: str, evidence: list[AgentEvidenceItem], 
     return "\n".join(lines + [f"\nLikely Cause:\n{cause}", "\nRecommended Next Steps:"] + [f"{index}. {step}" for index, step in enumerate(steps, 1)] + ["\nWhat I Cannot Do Yet:\nThis agent is currently Stage 1 read-only. It cannot execute remediation actions, change business data, close tickets, resolve alerts, or send external messages."])
 
 
-def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigger: AgentChatMessage) -> AgentOrchestrationRun:
+def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigger: AgentChatMessage, *, use_real_model: bool = False, provider_code: str | None = None, model_code: str | None = None, dry_run: bool = False) -> AgentOrchestrationRun:
     now = _now()
     run = AgentOrchestrationRun(run_id=_next(db, AgentOrchestrationRun, AgentOrchestrationRun.run_id, "AGENT-RUN-"), case_id=case.id, session_id=session.id, trigger_message_id=trigger.id, status="STARTED", stage_mode=STAGE_1, orchestrator_mode="DETERMINISTIC_STAGE_1", started_at=now, summary="Deterministic Stage 1 context gathering started.", tools_planned={"retrieval": ["linked_support_artifacts", "recent_open_alerts", "recent_failed_batches", "recent_ams_tickets"]}, tools_used={}, actions_proposed=0, actions_executed=0)
     db.add(run)
@@ -181,14 +183,30 @@ def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigge
     evidence = _retrieve_evidence(db, case, run)
     retrieval = agent_knowledge_service.retrieve_for_agent(db, case, session, trigger)
     knowledge = _add_knowledge_evidence(db, case, run, retrieval.matches)
-    response_text = _guidance(case, trigger.message_text, evidence, knowledge)
-    response = AgentChatMessage(message_id=_next(db, AgentChatMessage, AgentChatMessage.message_id, "AGENT-MSG-"), session_id=session.id, sender_type="AGENT", sender_role="SUPPORT_AGENT", message_text=response_text, message_format="PLAIN_TEXT", generation_mode="DETERMINISTIC_AGENT", safety_status="SAFE", created_at=_now(), metadata_json={"stage_mode": STAGE_1, "evidence_count": len(evidence), "orchestration_run_id": str(run.id)})
+    deterministic_guidance = _guidance(case, trigger.message_text, evidence, knowledge)
+    generation_mode = "DETERMINISTIC_AGENT"
+    safety_status = "SAFE"
+    message_metadata: dict[str, Any] = {"stage_mode": STAGE_1, "evidence_count": len(evidence), "orchestration_run_id": str(run.id)}
+    response_text = deterministic_guidance
+    if use_real_model:
+        context_items = [{"type": item.evidence_type, "title": item.title, "summary": item.summary} for item in [*evidence, *knowledge][:14]]
+        real_request = RealModelRequest(provider_code=provider_code or "OPENAI_RESPONSES", model_code=model_code or "OPENAI_GPT_5_4_MINI", task_type="AGENT_STAGE_1_GUIDANCE", request_source="AGENT_CHAT", request_source_id=session.id, input_text=f"Case: {case.title}\nEngineer/user message: {trigger.message_text}", context_items=context_items, allow_real_model=True, dry_run=dry_run, metadata={"template_code": "TPL-AGENT-STAGE-1-GUIDANCE", "case_type": case.case_type}, created_by=case.created_by_role)
+        real_result = ai_provider_gateway.invoke_real_model(db, real_request)
+        message_metadata.update({"ai_invocation_id": str(real_result.invocation_id) if real_result.invocation_id else None, "invocation_number": real_result.invocation_number, "fallback_used": real_result.fallback_used, "real_model_status": real_result.status, "real_model_error": real_result.error_message})
+        generation_mode = real_result.generation_mode
+        safety_status = real_result.safety_status
+        if real_result.status == "SUCCESS" and real_result.output_text:
+            response_text = real_result.output_text
+        else:
+            generation_mode = "FALLBACK_DETERMINISTIC" if real_result.fallback_used else real_result.generation_mode
+    response = AgentChatMessage(message_id=_next(db, AgentChatMessage, AgentChatMessage.message_id, "AGENT-MSG-"), session_id=session.id, sender_type="AGENT", sender_role="SUPPORT_AGENT", message_text=response_text[:6000], message_format="PLAIN_TEXT", generation_mode=generation_mode, safety_status=safety_status, created_at=_now(), metadata_json=message_metadata)
     db.add(response)
     if case.case_type in ("BATCH_FAILURE", "OBSERVABILITY_ALERT", "AMS_TICKET", "SERVICE_ENGINEER_INVESTIGATION"):
         proposal = AgentActionProposal(proposal_id=_next(db, AgentActionProposal, AgentActionProposal.proposal_id, "AGENT-PROP-"), case_id=case.id, run_id=run.id, title="Review and document support evidence", description="A human support engineer should review the gathered evidence and document the next decision.", action_type="REVIEW_EVIDENCE", risk_level="LOW", status="PROPOSED", requires_approval=True, approval_status="PENDING", execution_status="DISABLED_IN_STAGE_1", created_at=now, updated_at=now)
         db.add(proposal)
         run.actions_proposed = 1
-    run.tools_used = {"operational_evidence": len(evidence), "knowledge_query_id": retrieval.query.query_id, "knowledge_results": len(knowledge)}
+    run.orchestrator_mode = "GOVERNED_REAL_MODEL_STAGE_1" if use_real_model else "DETERMINISTIC_STAGE_1"
+    run.tools_used = {"operational_evidence": len(evidence), "knowledge_query_id": retrieval.query.query_id, "knowledge_results": len(knowledge), "real_model_requested": use_real_model, "actions_executed": 0}
     run.status, run.completed_at, run.summary = "COMPLETED", _now(), f"Gathered {len(evidence)} operational and {len(knowledge)} knowledge evidence item(s) and produced read-only guidance."
     case.status, case.updated_at = "GUIDANCE_PROVIDED", _now()
     session.updated_at = _now()
@@ -235,7 +253,7 @@ def send_message(db: Session, session_id: UUID, request: AgentMessageCreate) -> 
     role = request.sender_role or ("BUSINESS_USER" if request.sender_type.upper() == "USER" else "SERVICE_ENGINEER")
     message = AgentChatMessage(message_id=_next(db, AgentChatMessage, AgentChatMessage.message_id, "AGENT-MSG-"), session_id=session.id, sender_type=request.sender_type.upper(), sender_role=role, message_text=request.message_text, message_format="PLAIN_TEXT", generation_mode="HUMAN_ENTERED", safety_status="NOT_APPLICABLE", created_at=_now())
     db.add(message); db.flush()
-    _orchestrate(db, session, session.case, message)
+    _orchestrate(db, session, session.case, message, use_real_model=request.use_real_model, provider_code=request.provider_code, model_code=request.model_code, dry_run=request.dry_run)
     db.commit()
     return _session_response(db, session)
 

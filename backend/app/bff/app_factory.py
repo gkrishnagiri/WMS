@@ -104,6 +104,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "observability_alerts")
         _include_group(application, "agent_chat")
         _include_group(application, "agent_knowledge")
+        _include_group(application, "ai_config", ("/api/v1/ai-config/real-model/status", "/api/v1/ai-config/real-model/dry-run"))
     elif definition.code == "simulation":
         application.include_router(simulation_router)
         _include_group(application, "synthetic_users")

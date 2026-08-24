@@ -62,3 +62,33 @@ async def test_disabled_non_mock_provider_cannot_be_invoked(warehouse_client):
     assert response.status_code == 409
     assert "disabled" in response.json()["detail"].lower()
 
+
+@pytest.mark.anyio
+async def test_real_model_status_is_disabled_and_dry_run_never_calls_provider(warehouse_client, monkeypatch):
+    status = await warehouse_client.get("/api/v1/ai-config/real-model/status")
+    assert status.status_code == 200
+    assert status.json()["real_model_enabled"] is False
+    assert status.json()["safe_to_invoke"] is False
+    assert status.json()["api_key_present"] is False
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("external provider must not be called during a dry run")
+
+    monkeypatch.setattr("app.services.ai_provider_gateway._openai_call", fail_if_called)
+    dry_run = await warehouse_client.post("/api/v1/ai-config/real-model/dry-run", json={"input_text": "Review an order fulfillment issue in Stage 1 read-only mode.", "allow_real_model": False, "dry_run": True})
+    assert dry_run.status_code == 200
+    assert dry_run.json()["generation_mode"] == "REAL_MODEL_DRY_RUN"
+    assert "no external provider" in dry_run.json()["output_text"].lower()
+
+
+@pytest.mark.anyio
+async def test_real_model_request_without_enablement_is_audited_with_safe_fallback(warehouse_client):
+    response = await warehouse_client.post("/api/v1/ai-config/real-model/test", json={"input_text": "Summarize this support issue in read-only mode.", "allow_real_model": True})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["generation_mode"] == "REAL_MODEL_DISABLED"
+    assert body["fallback_used"] is True
+    assert body["output_text"]
+    assert body["invocation_id"]
+    audit = await warehouse_client.get("/api/v1/ai-config/invocations")
+    assert any(item["id"] == body["invocation_id"] for item in audit.json())

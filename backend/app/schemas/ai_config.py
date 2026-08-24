@@ -191,3 +191,52 @@ class SafetyCheckResponse(BaseModel):
     matched_rules: list[SafetyMatchResponse] = Field(default_factory=list)
     message: str
 
+
+class RealModelRequest(BaseModel):
+    provider_code: str = Field(default="OPENAI_RESPONSES", max_length=100)
+    model_code: str = Field(default="OPENAI_GPT_5_4_MINI", max_length=120)
+    task_type: str = Field(default="AGENT_STAGE_1_GUIDANCE", max_length=60)
+    request_source: str = Field(default="MANUAL_REAL_MODEL_TEST", max_length=80)
+    request_source_id: UUID | None = None
+    input_text: str = Field(min_length=1, max_length=12000)
+    system_instruction: str | None = Field(default=None, max_length=5000)
+    context_items: list[dict] = Field(default_factory=list)
+    temperature: float | None = Field(default=None, ge=0, le=2)
+    max_output_tokens: int | None = Field(default=None, ge=1, le=10000)
+    reasoning_effort: str | None = Field(default=None, max_length=20)
+    allow_real_model: bool = False
+    dry_run: bool = False
+    metadata: dict = Field(default_factory=dict)
+    created_by: str = Field(default="system", max_length=120)
+
+
+class RealModelStatus(BaseModel):
+    real_model_enabled: bool
+    provider_code: str
+    model_code: str
+    default_model: str
+    provider_configured: bool
+    model_configured: bool
+    api_key_present: bool
+    provider_enabled: bool
+    model_enabled: bool
+    safe_to_invoke: bool
+    reason: str
+
+
+class RealModelInvocationResponse(BaseModel):
+    invocation_id: UUID | None
+    invocation_number: str | None
+    provider_code: str
+    model_code: str
+    generation_mode: str
+    status: str
+    safety_status: str
+    output_text: str | None
+    fallback_used: bool
+    external_request_id: str | None = None
+    latency_ms: int = 0
+    usage: dict[str, int] = Field(default_factory=dict)
+    guardrail_events: list[GuardrailEventResponse] = Field(default_factory=list)
+    error_message: str | None = None
+    notes: list[str] = Field(default_factory=list)

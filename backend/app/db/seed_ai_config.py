@@ -8,6 +8,7 @@ from app.models.ai_config import AiModelConfig, AiPromptTemplate, AiProvider, Ai
 
 PROVIDERS = [
     ("MOCK_GOVERNED", "Governed Mock Provider", "MOCK", "Deterministic local provider used for governed tests.", None, "NONE", True, True),
+    ("OPENAI_RESPONSES", "OpenAI Responses API", "REAL_MODEL", "Disabled by default; optional governed OpenAI-compatible Responses API provider.", None, "API_KEY_REFERENCE", False, False),
     ("OPENAI_DISABLED_PLACEHOLDER", "OpenAI Placeholder", "OPENAI_COMPATIBLE", "Disabled placeholder; no credentials or calls are configured.", "https://api.openai.com", "API_KEY_REFERENCE", False, False),
     ("AZURE_OPENAI_DISABLED_PLACEHOLDER", "Azure OpenAI Placeholder", "AZURE_OPENAI", "Disabled placeholder; no credentials or calls are configured.", None, "API_KEY_REFERENCE", False, False),
     ("LOCAL_MODEL_DISABLED_PLACEHOLDER", "Local Model Placeholder", "LOCAL", "Disabled placeholder for a future local runtime.", None, "NONE", False, False),
@@ -20,6 +21,11 @@ TEMPLATES = [
     ("TPL-CUSTOMER-UPDATE-DRAFT", "Customer Update Draft", "Draft a customer-safe support update.", "CUSTOMER_UPDATE_DRAFT", "You draft plain-language customer communications.", "Draft a customer update for: {input}", {"input": "object"}, {"customer_update": "string"}),
     ("TPL-INVESTIGATION-CHECKLIST", "Investigation Checklist", "Draft a support investigation checklist.", "INVESTIGATION_CHECKLIST", "You produce a reviewable checklist and do not execute actions.", "Create an investigation checklist for: {input}", {"input": "object"}, {"checklist": "array"}),
     ("TPL-GENERAL-TEST", "General Governed Test", "Run a safe deterministic provider test.", "GENERAL_TEST", "You return a concise deterministic test response.", "Respond safely to: {input}", {"input": "object"}, {"response": "string"}),
+    ("TPL-AGENT-STAGE-1-GUIDANCE", "Agent Stage 1 Guidance", "Governed read-only guidance for an agent case.", "AGENT_STAGE_1_GUIDANCE", "You are a Stage 1 read-only support assistant. Use only the supplied EOS context. Do not claim that you executed an action, do not ask for secrets, do not provide autonomous remediation, and say what evidence is missing when uncertain. Return concise structured guidance.", "Provide Stage 1 guidance for this case and its curated evidence: {input}", {"input": "object"}, {"guidance": "string"}),
+    ("TPL-AGENT-KNOWLEDGE-SUMMARY", "Agent Knowledge Summary", "Summarize curated knowledge for a support case.", "AGENT_KNOWLEDGE_SUMMARY", "Summarize only supplied knowledge. This is read-only support guidance; do not claim actions were executed and do not ask for secrets.", "Summarize the relevant knowledge: {input}", {"input": "object"}, {"summary": "string"}),
+    ("TPL-AGENT-EVIDENCE-SUMMARY", "Agent Evidence Summary", "Summarize curated operational evidence.", "AGENT_EVIDENCE_SUMMARY", "Summarize only supplied evidence. Do not invent current state, execute tools, or propose autonomous remediation.", "Summarize the supplied evidence: {input}", {"input": "object"}, {"summary": "string"}),
+    ("TPL-CUSTOMER-FACING-ISSUE-GUIDANCE", "Customer Issue Guidance", "Draft safe user-facing issue guidance.", "CUSTOMER_FACING_ISSUE_GUIDANCE", "Provide cautious, plain-language Stage 1 guidance. Do not ask for credentials or claim that EOS changed anything.", "Provide customer-safe guidance for: {input}", {"input": "object"}, {"guidance": "string"}),
+    ("TPL-SERVICE-ENGINEER-INVESTIGATION-GUIDANCE", "Service Engineer Investigation Guidance", "Draft read-only service engineer guidance.", "SERVICE_ENGINEER_INVESTIGATION_GUIDANCE", "Provide reviewable Stage 1 investigation guidance from supplied context only. Do not execute actions or request secrets.", "Provide engineer investigation guidance for: {input}", {"input": "object"}, {"guidance": "string"}),
 ]
 
 RULES = [
@@ -53,6 +59,13 @@ def seed() -> None:
             db.add(AiModelConfig(model_code="MOCK-SUPPORT-COPILOT-001", provider_id=mock.id, display_name="Mock Support Copilot", model_name="mock-governed-v1", model_family="DETERMINISTIC", purpose="GENERAL_TEST", enabled=True, is_default=True, temperature=0, top_p=1, max_output_tokens=1000, context_window_tokens=8000, cost_per_1k_input_tokens=0, cost_per_1k_output_tokens=0))
         else:
             model.provider_id, model.enabled, model.is_default = mock.id, True, True
+        real_provider = db.scalar(select(AiProvider).where(AiProvider.provider_code == "OPENAI_RESPONSES"))
+        assert real_provider is not None
+        real_model = db.scalar(select(AiModelConfig).where(AiModelConfig.model_code == "OPENAI_GPT_5_4_MINI"))
+        if real_model is None:
+            db.add(AiModelConfig(model_code="OPENAI_GPT_5_4_MINI", provider_id=real_provider.id, display_name="GPT-5.4 Mini (Governed, Disabled)", model_name="gpt-5.4-mini", model_family="OPENAI_RESPONSES", purpose="AGENT_STAGE_1_GUIDANCE", enabled=False, is_default=False, temperature=0, top_p=1, max_output_tokens=1200, context_window_tokens=128000, cost_per_1k_input_tokens=0, cost_per_1k_output_tokens=0))
+        else:
+            real_model.provider_id, real_model.model_name, real_model.enabled, real_model.is_default = real_provider.id, "gpt-5.4-mini", False, False
         for code, name, description, task_type, system_template, user_template, input_schema, output_schema in TEMPLATES:
             row = db.scalar(select(AiPromptTemplate).where(AiPromptTemplate.template_code == code, AiPromptTemplate.template_version == 1))
             if row is None:

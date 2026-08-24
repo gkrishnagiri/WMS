@@ -76,6 +76,19 @@ class Settings(BaseSettings):
     otel_tempo_url: str = "http://localhost:3200"
     otel_loki_url: str = "http://localhost:3100"
 
+    # Real-model support is deliberately opt-in. The API key is read from the
+    # environment only and is never persisted or returned by an API endpoint.
+    real_model_enabled: bool = False
+    openai_api_key: str | None = None
+    openai_base_url: str | None = None
+    openai_org_id: str | None = None
+    openai_project_id: str | None = None
+    openai_default_model: str = "gpt-5.4-mini"
+    openai_request_timeout_seconds: int = 30
+    openai_max_output_tokens: int = 1200
+    openai_reasoning_effort: str = "low"
+    openai_store_responses: bool = False
+
     @property
     def database_url(self) -> str:
         return (

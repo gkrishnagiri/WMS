@@ -94,6 +94,9 @@ def readiness() -> DemoReadinessResponse:
     items.append(_http_item("Agent Knowledge", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
     items.append(_http_item("Deterministic Retrieval", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
     items.append(_http_item("RAG Foundation", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
+    items.append(_http_item("Real Model Provider", "backend", "http://localhost:8050/api/v1/ai-config/real-model/status"))
+    items.append(_http_item("OpenAI Responses Provider", "backend", "http://localhost:8050/api/v1/ai-config/real-model/status"))
+    items.append(_http_item("Real Model Feature Flag", "backend", "http://localhost:8050/api/v1/ai-config/real-model/status"))
     for item in EXPERIENCE_DEFINITIONS.values():
         items.append(_http_item(f"{item.name} frontend", "frontend", item.frontend_url))
     return DemoReadinessResponse(

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.ai_config import AiConfigSummary, GuardrailEventResponse, InvocationResponse, ModelConfigResponse, PromptTemplateResponse, ProviderResponse, SafetyCheckRequest, SafetyCheckResponse, SafetyPolicyResponse, SafetyRuleResponse, TestInvocationRequest, UsageDailyResponse
+from app.schemas.ai_config import AiConfigSummary, GuardrailEventResponse, InvocationResponse, ModelConfigResponse, PromptTemplateResponse, ProviderResponse, RealModelInvocationResponse, RealModelRequest, RealModelStatus, SafetyCheckRequest, SafetyCheckResponse, SafetyPolicyResponse, SafetyRuleResponse, TestInvocationRequest, UsageDailyResponse
 from app.services import ai_config_service, ai_provider_gateway, ai_safety_service
 
 router = APIRouter(prefix="/api/v1/ai-config", tags=["ai-config"])
@@ -80,3 +80,36 @@ def test_invocation(request: TestInvocationRequest, db: Session = Depends(get_db
 @router.post("/safety-check", response_model=SafetyCheckResponse)
 def safety_check(request: SafetyCheckRequest, db: Session = Depends(get_db)) -> SafetyCheckResponse:
     return ai_safety_service.response(ai_safety_service.evaluate(db, request.text))
+
+
+@router.get("/real-model/status", response_model=RealModelStatus)
+def real_model_status(db: Session = Depends(get_db)) -> RealModelStatus:
+    return ai_provider_gateway.real_model_status(db)
+
+
+@router.get("/real-model/providers", response_model=list[ProviderResponse])
+def real_model_providers(db: Session = Depends(get_db)) -> list[ProviderResponse]:
+    return [provider for provider in ai_config_service.list_providers(db) if not provider.is_mock]
+
+
+@router.get("/real-model/models", response_model=list[ModelConfigResponse])
+def real_model_models(db: Session = Depends(get_db)) -> list[ModelConfigResponse]:
+    return [model for model in ai_config_service.list_models(db) if not model.provider_code == "MOCK_GOVERNED"]
+
+
+@router.post("/real-model/dry-run", response_model=RealModelInvocationResponse)
+def real_model_dry_run(request: RealModelRequest, db: Session = Depends(get_db)) -> RealModelInvocationResponse:
+    request.dry_run = True
+    try:
+        return ai_provider_gateway.invoke_real_model(db, request)
+    except Exception as error:  # configuration failures are returned as governed API errors
+        raise _error(error) from error
+
+
+@router.post("/real-model/test", response_model=RealModelInvocationResponse)
+def real_model_test(request: RealModelRequest, db: Session = Depends(get_db)) -> RealModelInvocationResponse:
+    request.dry_run = False
+    try:
+        return ai_provider_gateway.invoke_real_model(db, request)
+    except Exception as error:
+        raise _error(error) from error
