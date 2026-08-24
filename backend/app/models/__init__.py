@@ -9,6 +9,7 @@ from app.models.monitoring import MonAlert, MonAlertEvent, MonAlertRule, MonComp
 from app.models.observability import ObsDiagnosticCase, ObsDiagnosticEvidence, ObsLogEvent, ObsMetricSample, ObsSpan, ObsTrace
 from app.models.observability_alerts import ObsAlertEvaluationRun, ObsAlertEvent, ObsAlertEventEvidence, ObsAlertRule, ObsAlertTicketLink
 from app.models.agent_chat import AgentActionProposal, AgentCase, AgentChatMessage, AgentChatSession, AgentEvidenceItem, AgentOrchestrationRun
+from app.models.agent_knowledge import AgentKnowledgeArticle, AgentKnowledgeChunk, AgentKnowledgeSource, AgentKnownError, AgentRetrievalQuery, AgentRetrievalResult
 from app.models.synthetic_users import SyntheticJourney, SyntheticJourneyRun, SyntheticUser
 from app.models.user_reports import AmsUserReport
 
@@ -90,4 +91,10 @@ __all__ = [
     "AgentOrchestrationRun",
     "AgentEvidenceItem",
     "AgentActionProposal",
+    "AgentKnowledgeSource",
+    "AgentKnowledgeArticle",
+    "AgentKnowledgeChunk",
+    "AgentKnownError",
+    "AgentRetrievalQuery",
+    "AgentRetrievalResult",
 ]

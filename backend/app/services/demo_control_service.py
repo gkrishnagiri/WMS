@@ -91,6 +91,9 @@ def readiness() -> DemoReadinessResponse:
     items.append(_http_item("Agent Chat", "backend", "http://localhost:8050/api/v1/agent-chat/summary"))
     items.append(_http_item("Agentic Case Intake", "backend", "http://localhost:8065/api/v1/agent-chat/summary"))
     items.append(_http_item("Stage 1 Orchestrator", "backend", "http://localhost:8050/api/v1/agent-chat/summary"))
+    items.append(_http_item("Agent Knowledge", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
+    items.append(_http_item("Deterministic Retrieval", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
+    items.append(_http_item("RAG Foundation", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
     for item in EXPERIENCE_DEFINITIONS.values():
         items.append(_http_item(f"{item.name} frontend", "frontend", item.frontend_url))
     return DemoReadinessResponse(

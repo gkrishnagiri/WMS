@@ -174,6 +174,16 @@ async def test_agent_chat_bff_route_boundaries(each_bff_client):
 
 
 @pytest.mark.anyio
+async def test_agent_knowledge_bff_route_boundaries(each_bff_client):
+    client, code = each_bff_client
+    response = await client.get("/api/v1/agent-knowledge/summary")
+    if code in ("business", "operations", "agentic"):
+        assert response.status_code == 200
+    else:
+        assert response.status_code == 404
+
+
+@pytest.mark.anyio
 async def test_bff_cors_preflight_allows_its_frontend(each_bff_client):
     client, code = each_bff_client
     origin = get_experience(code).allowed_origins[0]

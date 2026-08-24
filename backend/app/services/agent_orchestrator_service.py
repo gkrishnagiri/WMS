@@ -16,6 +16,7 @@ from app.models.observability import ObsDiagnosticCase
 from app.models.observability_alerts import ObsAlertEvent, ObsAlertEventEvidence
 from app.models.user_reports import AmsUserReport
 from app.schemas.agent_chat import AgentActionProposalResponse, AgentCaseCreate, AgentCaseResponse, AgentChatMessageResponse, AgentChatSessionResponse, AgentEvidenceResponse, AgentIntakeRequest, AgentMessageCreate, AgentRunResponse, AgentSessionCreate
+from app.services import agent_knowledge_service
 
 STAGE_1 = "STAGE_1_READ_ONLY"
 ACTIVE_SESSION = "ACTIVE"
@@ -135,13 +136,28 @@ def _retrieve_evidence(db: Session, case: AgentCase, run: AgentOrchestrationRun)
     return items
 
 
-def _guidance(case: AgentCase, message: str, evidence: list[AgentEvidenceItem]) -> str:
+def _add_knowledge_evidence(db: Session, case: AgentCase, run: AgentOrchestrationRun, matches: list[agent_knowledge_service.KnowledgeMatch]) -> list[AgentEvidenceItem]:
+    items: list[AgentEvidenceItem] = []
+    for match in matches:
+        if match.known_error:
+            items.append(_add_evidence(db, case, run, "KNOWN_ERROR", "agent_known_errors", match.known_error.error_code, f"{match.known_error.title}: {match.known_error.symptoms}", match.known_error.id, {"likely_cause": match.known_error.likely_cause, "workaround": match.known_error.workaround}, score=match.score))
+        elif match.article and match.chunk:
+            items.append(_add_evidence(db, case, run, "KNOWLEDGE_CHUNK", "agent_knowledge_chunks", match.chunk.chunk_id, f"{match.article.title} — {match.chunk.heading}: {match.snippet}", match.chunk.id, {"article_id": match.article.article_id, "article_type": match.article.article_type, "domain": match.article.domain}, score=match.score))
+    return items
+
+
+def _guidance(case: AgentCase, message: str, evidence: list[AgentEvidenceItem], knowledge: list[AgentEvidenceItem]) -> str:
     case_label = case.case_type.replace("_", " ").lower()
-    lines = [f"Understanding:\nYou are reporting a {case_label}: {case.title}.", "\nRelevant Evidence:"]
+    lines = [f"Understanding:\nYou are reporting a {case_label}: {case.title}.", "\nRelevant Operational Evidence:"]
     if evidence:
         lines.extend(f"- {item.summary}" for item in evidence[:8])
     else:
         lines.append("- No linked support artifact was found; the issue description is the current evidence.")
+    lines.append("\nRelevant Knowledge:")
+    if knowledge:
+        lines.extend(f"- {item.summary}" for item in knowledge[:6])
+    else:
+        lines.append("- No matching curated knowledge article or known error was found.")
     if case.case_type == "BATCH_FAILURE":
         cause = "A failed or delayed batch step is the leading hypothesis; review its failure type and record counts before considering a rerun."
         steps = ["Review the failed batch step and its lifecycle events.", "Confirm records processed, succeeded, and failed.", "Check whether an exception, alert, diagnostic, or AMS ticket is linked.", "Confirm whether any rerun is safe with a service engineer."]
@@ -163,14 +179,17 @@ def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigge
     db.add(run)
     db.flush()
     evidence = _retrieve_evidence(db, case, run)
-    response_text = _guidance(case, trigger.message_text, evidence)
+    retrieval = agent_knowledge_service.retrieve_for_agent(db, case, session, trigger)
+    knowledge = _add_knowledge_evidence(db, case, run, retrieval.matches)
+    response_text = _guidance(case, trigger.message_text, evidence, knowledge)
     response = AgentChatMessage(message_id=_next(db, AgentChatMessage, AgentChatMessage.message_id, "AGENT-MSG-"), session_id=session.id, sender_type="AGENT", sender_role="SUPPORT_AGENT", message_text=response_text, message_format="PLAIN_TEXT", generation_mode="DETERMINISTIC_AGENT", safety_status="SAFE", created_at=_now(), metadata_json={"stage_mode": STAGE_1, "evidence_count": len(evidence), "orchestration_run_id": str(run.id)})
     db.add(response)
     if case.case_type in ("BATCH_FAILURE", "OBSERVABILITY_ALERT", "AMS_TICKET", "SERVICE_ENGINEER_INVESTIGATION"):
         proposal = AgentActionProposal(proposal_id=_next(db, AgentActionProposal, AgentActionProposal.proposal_id, "AGENT-PROP-"), case_id=case.id, run_id=run.id, title="Review and document support evidence", description="A human support engineer should review the gathered evidence and document the next decision.", action_type="REVIEW_EVIDENCE", risk_level="LOW", status="PROPOSED", requires_approval=True, approval_status="PENDING", execution_status="DISABLED_IN_STAGE_1", created_at=now, updated_at=now)
         db.add(proposal)
         run.actions_proposed = 1
-    run.status, run.completed_at, run.summary = "COMPLETED", _now(), f"Gathered {len(evidence)} evidence item(s) and produced read-only guidance."
+    run.tools_used = {"operational_evidence": len(evidence), "knowledge_query_id": retrieval.query.query_id, "knowledge_results": len(knowledge)}
+    run.status, run.completed_at, run.summary = "COMPLETED", _now(), f"Gathered {len(evidence)} operational and {len(knowledge)} knowledge evidence item(s) and produced read-only guidance."
     case.status, case.updated_at = "GUIDANCE_PROVIDED", _now()
     session.updated_at = _now()
     return run

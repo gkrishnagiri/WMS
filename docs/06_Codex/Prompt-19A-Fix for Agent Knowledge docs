@@ -1,0 +1,40 @@
+Fix Prompt 19 seed_agent_knowledge idempotency defect.
+
+Issue:
+Running python -m app.db.seed_agent_knowledge fails after knowledge search / agent chat has created retrieval audit records.
+
+Observed error:
+- seed_agent_knowledge.py deletes AgentKnowledgeChunk rows for an article.
+- agent_retrieval_results references agent_knowledge_chunks through agent_retrieval_results_chunk_id_fkey.
+- PostgreSQL raises ForeignKeyViolation because referenced chunks cannot be deleted.
+
+Required fix:
+1. Update backend/app/db/seed_agent_knowledge.py so it never deletes agent_knowledge_chunks that may be referenced by retrieval audit rows.
+2. Replace delete-and-recreate chunk logic with deterministic upsert/update-in-place logic.
+3. Use stable chunk identity based on article and chunk_index or deterministic chunk_id.
+4. For each seeded article:
+   - create article if missing
+   - update article if existing
+   - create chunk if missing
+   - update chunk_text, normalized_text, heading, keywords, and token_count_estimate if existing
+   - do not delete existing chunks if they are referenced
+5. If there are obsolete extra chunks, leave them in place or mark/handle them non-destructively if the current model supports it. Do not delete them.
+6. Preserve retrieval query and retrieval result audit history.
+7. Add/update tests to cover:
+   - seed_agent_knowledge can run twice on a clean database
+   - run knowledge search to create agent_retrieval_results
+   - seed_agent_knowledge can run again after retrieval results exist
+   - retrieval audit rows still reference valid chunks
+8. Do not modify docker-compose.yml.
+9. Do not modify observability infrastructure.
+10. Do not add external LLM, embeddings, vector DB, ServiceNow, auth, or autonomous remediation.
+
+Validation:
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+python -m app.db.seed_agent_knowledge
+curl or test-trigger a knowledge search to create retrieval results
+python -m app.db.seed_agent_knowledge
+pytest
+git diff --check

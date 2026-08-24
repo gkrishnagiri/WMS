@@ -18,6 +18,7 @@ import { ExperienceRootPage } from "./pages/ExperienceHomePage";
 import { DemoControlPage } from "./pages/DemoControlPage";
 import { ObservabilityAlertEventDetailPage, ObservabilityAlertEvaluationRunsPage, ObservabilityAlertEventsPage, ObservabilityAlertRulesPage, ObservabilityAlertsPage } from "./pages/ObservabilityAlertPages";
 import { AgentCaseDetailPage, AgentCasesPage, AgentChatHomePage, AgentIntakePage, AgentSessionDetailPage, AgentSessionsPage } from "./pages/AgentChatPages";
+import { AgentKnowledgeArticleDetailPage, AgentKnowledgeArticlesPage, AgentKnowledgeHomePage, AgentKnowledgeSearchPage, AgentKnowledgeSourcesPage, AgentKnownErrorDetailPage, AgentKnownErrorsPage, AgentRetrievalQueriesPage, AgentRetrievalQueryDetailPage } from "./pages/AgentKnowledgePages";
 
 export default function App() {
   return (
@@ -37,6 +38,15 @@ export default function App() {
         <Route path="/agent-chat/cases/:caseId" element={<AgentCaseDetailPage />} />
         <Route path="/agent-chat/sessions" element={<AgentSessionsPage />} />
         <Route path="/agent-chat/sessions/:sessionId" element={<AgentSessionDetailPage />} />
+        <Route path="/agent-knowledge" element={<AgentKnowledgeHomePage />} />
+        <Route path="/agent-knowledge/search" element={<AgentKnowledgeSearchPage />} />
+        <Route path="/agent-knowledge/sources" element={<AgentKnowledgeSourcesPage />} />
+        <Route path="/agent-knowledge/articles" element={<AgentKnowledgeArticlesPage />} />
+        <Route path="/agent-knowledge/articles/:articleId" element={<AgentKnowledgeArticleDetailPage />} />
+        <Route path="/agent-knowledge/known-errors" element={<AgentKnownErrorsPage />} />
+        <Route path="/agent-knowledge/known-errors/:knownErrorId" element={<AgentKnownErrorDetailPage />} />
+        <Route path="/agent-knowledge/retrieval-queries" element={<AgentRetrievalQueriesPage />} />
+        <Route path="/agent-knowledge/retrieval-queries/:queryId" element={<AgentRetrievalQueryDetailPage />} />
         <Route path="/health" element={<HealthPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/warehouse" element={<WarehousePage />} />

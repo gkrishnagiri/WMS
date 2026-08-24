@@ -473,6 +473,38 @@ Future orchestration can add governed real-model selection, RAG over runbooks,
 SOPs, KB articles and historical tickets, live read-only tools for current
 state, and separately governed action tools. Those layers remain deferred.
 
+## Knowledge and deterministic RAG foundation
+
+Prompt 19 adds a curated knowledge plane for agent support. Knowledge sources
+own articles; articles are split into small deterministic chunks with normalized
+text, estimated word counts, and keyword lists. Known-error records capture
+repeatable symptoms, causes, workarounds, and links to related articles.
+
+`agent_retrieval_queries` and `agent_retrieval_results` provide an audit trail
+for every search, including searches initiated by an agent case. Retrieval is
+keyword/scored and bounded by `top_k`; title, tag, domain, summary, phrase,
+chunk, symptom, and known-error matches contribute transparent scores. There
+are no embeddings or vector-store dependencies.
+
+During Stage 1 orchestration, the agent combines operational evidence with
+knowledge results, persists `KNOWLEDGE_CHUNK` and `KNOWN_ERROR` evidence, and
+includes a Relevant Knowledge section in its read-only response. This keeps
+retrieval separate from generation and preserves the existing deterministic
+agent contract.
+
+The future hybrid design is:
+
+```text
+curated/static knowledge -> keyword + vector retrieval -> optional reranking
+live EOS state           -> read-only tools
+case context             -> governed model prompt with citations
+approved actions         -> separate human-approved action tools
+```
+
+Prompt 19 implements only the catalog, chunking, deterministic retrieval, and
+audit foundation. It does not call a real model, create embeddings, use a
+vector database, ingest ServiceNow knowledge, or execute remediation.
+
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,

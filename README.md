@@ -1013,3 +1013,40 @@ assistant is `http://localhost:4011/agent-chat/user`, the Operations engineer
 chat is `http://localhost:4012/agent-chat/engineer`, and the full UI remains
 at `http://localhost:4001`. All use the existing backend/BFF ports and no
 additional infrastructure.
+
+## Prompt 19 knowledge and RAG foundation
+
+Prompt 19 adds curated EOS support knowledge for the deterministic Stage 1
+agent. The knowledge catalog contains five sources, ten runbooks/SOPs and
+guides, thirty searchable chunks, and six known-error records. Seed it
+idempotently with:
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m app.db.seed_agent_knowledge
+```
+
+Knowledge is searched through transparent keyword scoring across titles,
+tags, domains, summaries, chunks, symptoms, and known-error records. Each
+search creates a retrieval query and result audit record. Agent orchestration
+uses the same retrieval path and stores top article chunks/known errors as
+case evidence; responses now include a `Relevant Knowledge` section.
+
+Knowledge APIs use `/api/v1/agent-knowledge`:
+
+- `GET /summary`, `/sources`, `/articles`, `/known-errors`
+- `GET /articles/{article_id}`, `/known-errors/{known_error_id}`
+- `POST /search`
+- `GET /retrieval-queries` and `/retrieval-queries/{query_id}`
+
+The full backend, Operations BFF, and Agentic BFF expose the knowledge API;
+Business exposes only summary/search for user help, while Simulation and
+Observability intentionally return 404. Knowledge pages are available in the
+full, Operations, and Agentic UIs at `/agent-knowledge`, `/search`,
+`/articles`, `/known-errors`, and `/retrieval-queries` (with detail routes).
+
+This is a RAG foundation only: retrieval is deterministic keyword matching,
+with no external LLM, embedding model, vector database, LangChain/LlamaIndex,
+or remediation execution. Future work can add hybrid vector retrieval,
+reranking, citations, document ingestion, and governed real-model generation.
