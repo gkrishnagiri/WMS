@@ -1208,3 +1208,30 @@ actions, send customer communications, post to ServiceNow, run shell or SQL,
 or introduce autonomous remediation. An optional single smoke test may be run
 only when a user intentionally supplies a key in the shell; keys must never be
 committed.
+
+## Prompt 25 guided demo scenarios
+
+Prompt 25 adds presenter-controlled guided storylines at `/demo-scenarios`.
+The catalog includes Stuck Fulfillment Order, Batch Failure Recovery,
+User-Reported Shipment Delay, and Observability Alert Noise to Root Cause.
+Each run records guided steps, presenter talking points, local synthetic
+artifacts, deep links, a scenario timeline, and an outcome summary.
+
+```bash
+python -m app.db.seed_demo_scenarios
+curl -sS http://localhost:8050/api/v1/demo-scenarios/catalog | jq .
+curl -sS -X POST http://localhost:8050/api/v1/demo-scenarios/STUCK_FULFILLMENT_ORDER/start \
+  -H 'Content-Type: application/json' -d '{"created_by_role":"DEMO_PRESENTER"}' | jq .
+```
+
+Open `/demo-scenarios` in the Full, Operations, Simulation, or Agentic UI.
+The presenter advances one step at a time, opens linked operations/AMS/agent
+objects, and manually completes approval-gated action steps. Reset marks the
+run reset while retaining operational and audit history; it does not delete
+shared seed data.
+
+Scenario induction is local and deterministic: it creates synthetic reports,
+exceptions, failed batch context, monitoring alerts, triage, tickets, and
+agent handoffs using existing EOS services. It never calls a real model by
+default, executes an action automatically, sends communication, posts to
+ServiceNow, runs shell/SQL/code, or performs autonomous remediation.

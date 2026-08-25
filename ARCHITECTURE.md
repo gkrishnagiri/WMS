@@ -703,3 +703,42 @@ would need a new authorization, tool, and external-system governance boundary;
 it is not implied by model chat activation. Streaming, voice, browser use,
 vector databases, ServiceNow, customer sends, and autonomous remediation remain
 future work.
+
+## Prompt 25 demo scenario orchestration
+
+The guided demo layer coordinates a presenter-friendly storyline without
+becoming an automation or remediation engine:
+
+```text
+scenario catalog -> presenter starts run -> safe local issue induction
+                  -> guided step + deep links -> agent investigation
+                  -> evidence/knowledge/action review -> human action workflow
+                  -> scenario artifacts, timeline, and outcome summary
+```
+
+`demo_scenarios` stores the seeded catalog. `demo_scenario_runs` owns a
+presenter-controlled run, while `demo_scenario_steps` stores ordered
+instructions, talking points, target links, and completion state.
+`demo_scenario_artifacts` links generated local records such as orders,
+exceptions, tickets, batch runs, alerts, agent cases, sessions, proposals,
+and executions without copying their business data. `demo_scenario_events`
+provides a scenario-specific timeline. Reset marks a run as `RESET` and adds
+an event; it intentionally does not delete shared operational or action audit
+history.
+
+The service uses existing deterministic operations, AMS, batch, monitoring,
+user-report, agent handoff, investigation, and action services. Start creates
+minimum local context and the first active step. Advance or explicit step
+completion activates the next step; it never approves or executes an action
+and never invokes the real model. Agent handoff occurs only when the presenter
+advances to that guided step, with `use_real_model=false`. The investigation
+workspace exposes scenario name/run/step and links back to the guided run.
+
+Scenario APIs are exposed on the Full backend, Operations BFF, Simulation BFF,
+and Agentic BFF. Business has only catalog/summary read endpoints and
+Observability has no scenario surface. Demo readiness reads the catalog and
+summary only; readiness never starts a scenario. Prompt 25 adds guided demo
+orchestration only. It does not enable real model calls by default, execute
+shell commands or arbitrary SQL, call external systems, post to ServiceNow,
+send customer communications, add authentication, or introduce autonomous
+remediation.

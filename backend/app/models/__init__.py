@@ -12,6 +12,7 @@ from app.models.agent_chat import AgentActionAuditEvent, AgentActionExecution, A
 from app.models.agent_knowledge import AgentKnowledgeArticle, AgentKnowledgeChunk, AgentKnowledgeSource, AgentKnownError, AgentRetrievalQuery, AgentRetrievalResult
 from app.models.synthetic_users import SyntheticJourney, SyntheticJourneyRun, SyntheticUser
 from app.models.user_reports import AmsUserReport
+from app.models.demo_scenario import DemoScenario, DemoScenarioRun, DemoScenarioStep, DemoScenarioArtifact, DemoScenarioEvent
 
 from app.models.warehouse import (
     Allocation,
@@ -99,4 +100,9 @@ __all__ = [
     "AgentKnownError",
     "AgentRetrievalQuery",
     "AgentRetrievalResult",
+    "DemoScenario",
+    "DemoScenarioRun",
+    "DemoScenarioStep",
+    "DemoScenarioArtifact",
+    "DemoScenarioEvent",
 ]

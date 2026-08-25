@@ -20,6 +20,7 @@ import { ObservabilityAlertEventDetailPage, ObservabilityAlertEvaluationRunsPage
 import { AgentCaseDetailPage, AgentCasesPage, AgentChatHomePage, AgentIntakePage, AgentSessionDetailPage, AgentSessionsPage } from "./pages/AgentChatPages";
 import { AgentKnowledgeArticleDetailPage, AgentKnowledgeArticlesPage, AgentKnowledgeHomePage, AgentKnowledgeSearchPage, AgentKnowledgeSourcesPage, AgentKnownErrorDetailPage, AgentKnownErrorsPage, AgentRetrievalQueriesPage, AgentRetrievalQueryDetailPage } from "./pages/AgentKnowledgePages";
 import { AgentInvestigationDetailPage, AgentInvestigationsPage } from "./pages/AgentInvestigationPages";
+import { DemoScenarioCatalogPage, DemoScenarioRunPage, DemoScenarioRunsPage } from "./pages/DemoScenarioPages";
 
 export default function App() {
   return (
@@ -27,6 +28,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<ExperienceRootPage />} />
         <Route path="/demo-control" element={<DemoControlPage />} />
+        <Route path="/demo-scenarios" element={<DemoScenarioCatalogPage />} />
+        <Route path="/demo-scenarios/runs" element={<DemoScenarioRunsPage />} />
+        <Route path="/demo-scenarios/runs/:runId" element={<DemoScenarioRunPage />} />
         <Route path="/observability-alerts" element={<ObservabilityAlertsPage />} />
         <Route path="/observability-alerts/rules" element={<ObservabilityAlertRulesPage />} />
         <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />

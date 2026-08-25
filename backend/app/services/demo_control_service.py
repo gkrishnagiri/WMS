@@ -38,7 +38,7 @@ def urls() -> dict[str, object]:
     return {
         "experiences": _experience_payload(),
         "observability": OBSERVABILITY_URLS,
-        "capabilities": ["Stage 2 Action Catalog", "Approval-Gated Actions", "Action Execution Audit", "Governed Stage 1 Model Chat", "Model Context Preview", "Model Invocation Audit"],
+        "capabilities": ["Stage 2 Action Catalog", "Approval-Gated Actions", "Action Execution Audit", "Governed Stage 1 Model Chat", "Model Context Preview", "Model Invocation Audit", "Demo Scenario Catalog", "Guided Scenario Runs", "Scenario Artifact Linking", "Scenario Timeline"],
         "logs_directory": "/tmp/eos-demo/logs",
         "runtime_directory": "/tmp/eos-demo",
     }
@@ -105,6 +105,10 @@ def readiness() -> DemoReadinessResponse:
     items.append(_http_item("Governed Stage 1 Model Chat", "backend", "http://localhost:8050/api/v1/agent-model-chat/status"))
     items.append(_http_item("Model Context Preview", "backend", "http://localhost:8050/api/v1/agent-model-chat/status"))
     items.append(_http_item("Model Invocation Audit", "backend", "http://localhost:8050/api/v1/agent-model-chat/invocations"))
+    items.append(_http_item("Demo Scenario Catalog", "backend", "http://localhost:8050/api/v1/demo-scenarios/catalog"))
+    items.append(_http_item("Guided Scenario Runs", "backend", "http://localhost:8050/api/v1/demo-scenarios/summary"))
+    items.append(_http_item("Scenario Artifact Linking", "backend", "http://localhost:8050/api/v1/demo-scenarios/summary"))
+    items.append(_http_item("Scenario Timeline", "backend", "http://localhost:8050/api/v1/demo-scenarios/summary"))
     items.append(_http_item("Agent Knowledge", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
     items.append(_http_item("Deterministic Retrieval", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
     items.append(_http_item("RAG Foundation", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
 
-from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ams_router, batch_router, copilot_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, user_reports_router, warehouse_router
+from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ams_router, batch_router, copilot_router, demo_scenarios_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, user_reports_router, warehouse_router
 from app.api.routes.facades import agentic_router, business_router, observability_router as observability_facade_router, operations_router as operations_facade_router, simulation_router
 from app.api.routes.platform import router as platform_router
 from app.core.config import get_settings
@@ -40,6 +40,7 @@ ROUTERS = {
     "batch": batch_router,
     "copilot": copilot_router,
     "ai_config": ai_config_router,
+    "demo_scenarios": demo_scenarios_router,
 }
 
 
@@ -50,6 +51,13 @@ def _filtered_router(source: APIRouter, allowed_prefixes: Iterable[str]) -> APIR
         route for route in source.routes
         if isinstance(route, APIRoute) and any(route.path == prefix or route.path.startswith(f"{prefix}/") for prefix in prefixes)
     ]
+    return filtered
+
+
+def _filtered_exact_router(source: APIRouter, allowed_paths: Iterable[str]) -> APIRouter:
+    paths = set(allowed_paths)
+    filtered = APIRouter()
+    filtered.routes = [route for route in source.routes if isinstance(route, APIRoute) and route.path in paths]
     return filtered
 
 
@@ -95,6 +103,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "warehouse")
         _include_group(application, "agent_chat", ("/api/v1/agent-chat/summary", "/api/v1/agent-chat/intake/user-issue", "/api/v1/agent-chat/intake/from-user-report", "/api/v1/agent-chat/sessions"))
         _include_group(application, "agent_knowledge", ("/api/v1/agent-knowledge/summary", "/api/v1/agent-knowledge/search"))
+        application.include_router(_filtered_exact_router(demo_scenarios_router, ("/api/v1/demo-scenarios/summary", "/api/v1/demo-scenarios/catalog")))
     elif definition.code == "operations":
         application.include_router(operations_facade_router)
         _include_group(application, "operations", ("/api/v1/operations/exceptions",))
@@ -111,12 +120,14 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_investigations")
         _include_group(application, "agent_actions")
         _include_group(application, "agent_model_chat")
+        _include_group(application, "demo_scenarios")
     elif definition.code == "simulation":
         application.include_router(simulation_router)
         _include_group(application, "synthetic_users")
         _include_group(application, "batch")
         _include_group(application, "monitoring", ("/api/v1/monitoring/simulations",))
         _include_group(application, "observability", ("/api/v1/observability/simulations",))
+        _include_group(application, "demo_scenarios")
         _include_group(application, "observability_stack", ("/api/v1/observability-stack/test",))
     elif definition.code == "observability":
         application.include_router(observability_facade_router)
@@ -134,6 +145,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_investigations")
         _include_group(application, "agent_actions")
         _include_group(application, "agent_model_chat")
+        _include_group(application, "demo_scenarios")
     else:
         raise ValueError(f"Unsupported BFF experience: {definition.code}")
 
