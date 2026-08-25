@@ -1235,3 +1235,28 @@ exceptions, failed batch context, monitoring alerts, triage, tickets, and
 agent handoffs using existing EOS services. It never calls a real model by
 default, executes an action automatically, sends communication, posts to
 ServiceNow, runs shell/SQL/code, or performs autonomous remediation.
+
+## Prompt 26 executive demo dashboard
+
+Prompt 26 adds a read-only executive value storyboard at `/executive-demo`.
+It summarizes local scenario outcomes, investigations, evidence, knowledge
+reuse, governed model readiness, approval-gated actions, audit coverage, and
+the AI-native AMS operating model. Storyboard, value, and governance views are
+also available at `/executive-demo/storyboard`, `/executive-demo/value`, and
+`/executive-demo/governance`.
+
+All effort figures are labeled `Demo estimate`, `Illustrative assumption`, or
+`Scenario-derived metric`. They are computed from local EOS records and
+visible assumptions, not production measurements or financial forecasts. The
+dashboard is read-only and does not start scenarios, invoke models, approve or
+execute actions, send messages, post to ServiceNow, or implement billing.
+
+Validate the aggregate APIs with:
+
+```bash
+curl -sS http://localhost:8050/api/v1/executive-demo/summary | jq .
+curl -sS http://localhost:8050/api/v1/executive-demo/value-metrics | jq .
+curl -sS http://localhost:8050/api/v1/executive-demo/storyboard | jq .
+curl -sS http://localhost:8050/api/v1/executive-demo/governance | jq .
+curl -sS http://localhost:8050/api/v1/executive-demo/commercial-model | jq .
+```

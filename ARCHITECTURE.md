@@ -742,3 +742,39 @@ orchestration only. It does not enable real model calls by default, execute
 shell commands or arbitrary SQL, call external systems, post to ServiceNow,
 send customer communications, add authentication, or introduce autonomous
 remediation.
+
+## Prompt 26 executive demo value storyboard
+
+The executive layer is a read-only projection over the existing guided
+scenario, agent investigation, knowledge, action, and AI audit records:
+
+```text
+scenario runs + investigations + evidence/knowledge + actions + AI audit
+                              -> executive aggregation service
+                              -> KPI summary + value metrics + storyboard
+                              -> leadership UI and experience-aware deep links
+```
+
+`executive_demo_service` computes scenario-derived counts dynamically. It
+reports the issue-to-investigation chain, evidence and retrieval activity,
+approval-gated action state, model readiness, guardrail/audit coverage, and
+scenario proof points. Its effort-impact panel uses explicit illustrative
+assumptions for manual triage, evidence collection, drafting, assisted review,
+and approval review. The API returns the assumptions and a disclaimer so the
+figures cannot be mistaken for production productivity or ROI.
+
+The storyboard presents the traditional AMS challenge, AI-native operating
+model, four guided scenario proof points, governance by design, commercial
+model implications, and a roadmap to production. The commercial view is
+narrative only; there is no billing, pricing, contract, or financial engine.
+The value chain links signals, contextual handoff, evidence/knowledge,
+Stage 1 guidance, approval-gated actions, and audit/learning to existing EOS
+experiences.
+
+Business, Operations, and Agentic BFFs expose the read-only executive APIs;
+the Simulation BFF also exposes them as a read-only demo view, while the
+Observability BFF does not. Readiness checks only the summary endpoint and
+cannot start scenarios, invoke a model, or execute an action. Prompt 26 does
+not enable real model calls by default, add autonomous remediation, execute
+shell/SQL/code, integrate ServiceNow, send customer communications, add
+authentication, or claim production savings.

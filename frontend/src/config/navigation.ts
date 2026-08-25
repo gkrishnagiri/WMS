@@ -12,6 +12,7 @@ export const navigation: NavigationItem[] = [
   { label: "Dashboard", path: "/", experiences: allExperiences },
   { label: "Demo Control", path: "/demo-control", experiences: ["full"] },
   { label: "Guided Demo Scenarios", path: "/demo-scenarios", experiences: ["full", "operations", "simulation", "agentic"] },
+  { label: "Executive Demo", path: "/executive-demo", experiences: ["full", "business", "operations", "agentic"] },
   { label: "Observability Alerts", path: "/observability-alerts", experiences: ["full", "operations", "observability"] },
   { label: "Alert Rules", path: "/observability-alerts/rules", experiences: ["full", "operations", "observability"] },
   { label: "Alert Evaluation Runs", path: "/observability-alerts/evaluation-runs", experiences: ["full", "operations", "observability"] },

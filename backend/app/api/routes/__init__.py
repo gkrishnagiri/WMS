@@ -8,6 +8,7 @@ from app.api.routes.batch import router as batch_router
 from app.api.routes.copilot import router as copilot_router
 from app.api.routes.demo_control import router as demo_control_router
 from app.api.routes.demo_scenarios import router as demo_scenarios_router
+from app.api.routes.executive_demo import router as executive_demo_router
 from app.api.routes.operations import router as operations_router
 from app.api.routes.monitoring import router as monitoring_router
 from app.api.routes.observability import router as observability_router
@@ -48,5 +49,6 @@ router.include_router(batch_router)
 router.include_router(copilot_router)
 router.include_router(demo_control_router)
 router.include_router(demo_scenarios_router)
+router.include_router(executive_demo_router)
 router.include_router(platform_router)
 router.include_router(facade_router)

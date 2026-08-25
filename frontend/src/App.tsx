@@ -21,6 +21,7 @@ import { AgentCaseDetailPage, AgentCasesPage, AgentChatHomePage, AgentIntakePage
 import { AgentKnowledgeArticleDetailPage, AgentKnowledgeArticlesPage, AgentKnowledgeHomePage, AgentKnowledgeSearchPage, AgentKnowledgeSourcesPage, AgentKnownErrorDetailPage, AgentKnownErrorsPage, AgentRetrievalQueriesPage, AgentRetrievalQueryDetailPage } from "./pages/AgentKnowledgePages";
 import { AgentInvestigationDetailPage, AgentInvestigationsPage } from "./pages/AgentInvestigationPages";
 import { DemoScenarioCatalogPage, DemoScenarioRunPage, DemoScenarioRunsPage } from "./pages/DemoScenarioPages";
+import { ExecutiveDemoPage, ExecutiveGovernancePage, ExecutiveStoryboardPage, ExecutiveValuePage } from "./pages/ExecutiveDemoPages";
 
 export default function App() {
   return (
@@ -31,6 +32,10 @@ export default function App() {
         <Route path="/demo-scenarios" element={<DemoScenarioCatalogPage />} />
         <Route path="/demo-scenarios/runs" element={<DemoScenarioRunsPage />} />
         <Route path="/demo-scenarios/runs/:runId" element={<DemoScenarioRunPage />} />
+        <Route path="/executive-demo" element={<ExecutiveDemoPage />} />
+        <Route path="/executive-demo/storyboard" element={<ExecutiveStoryboardPage />} />
+        <Route path="/executive-demo/value" element={<ExecutiveValuePage />} />
+        <Route path="/executive-demo/governance" element={<ExecutiveGovernancePage />} />
         <Route path="/observability-alerts" element={<ObservabilityAlertsPage />} />
         <Route path="/observability-alerts/rules" element={<ObservabilityAlertRulesPage />} />
         <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />
