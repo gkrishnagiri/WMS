@@ -1183,3 +1183,28 @@ customer communication sends, authentication, or real-model-required
 execution. Deterministic/mock behavior remains the default and no OpenAI key
 is required. Duplicate execution attempts are safely prevented by a proposal
 idempotency key and execution audit record.
+
+## Prompt 24: governed Stage 1 real-model chat
+
+Prompt 24 adds optional, governed model assistance for Stage 1 investigation
+chat. Deterministic/mock behavior remains the default. A real call requires the
+feature flag, an enabled catalog provider/model, an environment API key, an
+explicit request, an allowed task, safety checks, and daily context/cost
+guardrails. The key is never entered in or returned by the UI.
+
+```bash
+curl -sS http://localhost:8050/api/v1/agent-model-chat/status | jq .
+curl -sS -X POST http://localhost:8050/api/v1/agent-model-chat/sessions/<SESSION_ID>/preview-context -H 'Content-Type: application/json' -d '{"message_text":"What is the likely cause?"}' | jq .
+curl -sS -X POST http://localhost:8050/api/v1/agent-model-chat/sessions/<SESSION_ID>/dry-run -H 'Content-Type: application/json' -d '{"message_text":"What should I check next?","use_real_model":true}' | jq .
+curl -sS -X POST http://localhost:8050/api/v1/agent-model-chat/sessions/<SESSION_ID>/ask -H 'Content-Type: application/json' -d '{"message_text":"What should I check next?","use_real_model":false}' | jq .
+curl -sS http://localhost:8050/api/v1/agent-model-chat/invocations | jq .
+```
+
+Preview and dry-run never call a model. An unavailable, disabled, unsafe, or
+over-limit request returns safe deterministic fallback guidance. Model answers
+are read-only, grounded in bounded case/evidence/knowledge context, audited,
+and marked with evidence/knowledge metadata. Prompt 24 does not execute
+actions, send customer communications, post to ServiceNow, run shell or SQL,
+or introduce autonomous remediation. An optional single smoke test may be run
+only when a user intentionally supplies a key in the shell; keys must never be
+committed.

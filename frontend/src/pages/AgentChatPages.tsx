@@ -436,6 +436,7 @@ function SessionView({
       <Chip sx={{ mt: 1 }} label={session.status} />
       <InvestigationSource session={session} />
           {(getExperienceCode() === "full" ||
+            getExperienceCode() === "operations" ||
             getExperienceCode() === "agentic") && (
             <FormControlLabel
               sx={{ display: "block", mt: 1 }}
@@ -564,6 +565,7 @@ export function AgentSessionDetailPage() {
         use_real_model: useRealModel,
         provider_code: useRealModel ? "OPENAI_RESPONSES" : undefined,
         model_code: useRealModel ? "OPENAI_GPT_5_4_MINI" : undefined,
+        task_type: "AGENT_STAGE_1_CHAT",
       }),
     onSuccess: () =>
       void qc.invalidateQueries({

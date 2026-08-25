@@ -195,7 +195,7 @@ class SafetyCheckResponse(BaseModel):
 class RealModelRequest(BaseModel):
     provider_code: str = Field(default="OPENAI_RESPONSES", max_length=100)
     model_code: str = Field(default="OPENAI_GPT_5_4_MINI", max_length=120)
-    task_type: str = Field(default="AGENT_STAGE_1_GUIDANCE", max_length=60)
+    task_type: str = Field(default="AGENT_STAGE_1_CHAT", max_length=60)
     request_source: str = Field(default="MANUAL_REAL_MODEL_TEST", max_length=80)
     request_source_id: UUID | None = None
     input_text: str = Field(min_length=1, max_length=12000)

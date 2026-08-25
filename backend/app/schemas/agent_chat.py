@@ -48,6 +48,7 @@ class AgentMessageCreate(BaseModel):
     provider_code: str | None = Field(default=None, max_length=100)
     model_code: str | None = Field(default=None, max_length=120)
     dry_run: bool = False
+    task_type: str = Field(default="AGENT_STAGE_1_CHAT", max_length=60)
 
 
 class AgentIntakeRequest(BaseModel):

@@ -18,8 +18,7 @@ from app.models.user_reports import AmsUserReport
 from app.models.monitoring import MonTriageCase
 from app.models.operations import OpsException
 from app.schemas.agent_chat import AgentActionProposalResponse, AgentCaseCreate, AgentCaseResponse, AgentChatMessageResponse, AgentChatSessionResponse, AgentEvidenceResponse, AgentIntakeRequest, AgentMessageCreate, AgentRunResponse, AgentSessionCreate
-from app.schemas.ai_config import RealModelRequest
-from app.services import ai_provider_gateway
+from app.services import agent_model_chat_service
 from app.services import agent_knowledge_service
 from app.services import agent_action_service
 
@@ -186,7 +185,7 @@ def _guidance(case: AgentCase, message: str, evidence: list[AgentEvidenceItem], 
     return "\n".join(lines + [f"\nLikely Cause:\n{cause}", "\nRecommended Next Steps:"] + [f"{index}. {step}" for index, step in enumerate(steps, 1)] + ["\nWhat I Cannot Do Yet:\nThis agent is currently Stage 1 read-only. It cannot execute remediation actions, change business data, close tickets, resolve alerts, or send external messages."])
 
 
-def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigger: AgentChatMessage, *, use_real_model: bool = False, provider_code: str | None = None, model_code: str | None = None, dry_run: bool = False) -> AgentOrchestrationRun:
+def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigger: AgentChatMessage, *, use_real_model: bool = False, provider_code: str | None = None, model_code: str | None = None, dry_run: bool = False, task_type: str = "AGENT_STAGE_1_CHAT") -> AgentOrchestrationRun:
     now = _now()
     run = AgentOrchestrationRun(run_id=_next(db, AgentOrchestrationRun, AgentOrchestrationRun.run_id, "AGENT-RUN-"), case_id=case.id, session_id=session.id, trigger_message_id=trigger.id, status="STARTED", stage_mode=STAGE_1, orchestrator_mode="DETERMINISTIC_STAGE_1", started_at=now, summary="Deterministic Stage 1 context gathering started.", tools_planned={"retrieval": ["linked_support_artifacts", "recent_open_alerts", "recent_failed_batches", "recent_ams_tickets"]}, tools_used={}, actions_proposed=0, actions_executed=0)
     db.add(run)
@@ -200,16 +199,10 @@ def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigge
     message_metadata: dict[str, Any] = {"stage_mode": STAGE_1, "evidence_count": len(evidence), "orchestration_run_id": str(run.id)}
     response_text = deterministic_guidance
     if use_real_model:
-        context_items = [{"type": item.evidence_type, "title": item.title, "summary": item.summary} for item in [*evidence, *knowledge][:14]]
-        real_request = RealModelRequest(provider_code=provider_code or "OPENAI_RESPONSES", model_code=model_code or "OPENAI_GPT_5_4_MINI", task_type="AGENT_STAGE_1_GUIDANCE", request_source="AGENT_CHAT", request_source_id=session.id, input_text=f"Case: {case.title}\nEngineer/user message: {trigger.message_text}", context_items=context_items, allow_real_model=True, dry_run=dry_run, metadata={"template_code": "TPL-AGENT-STAGE-1-GUIDANCE", "case_type": case.case_type}, created_by=case.created_by_role)
-        real_result = ai_provider_gateway.invoke_real_model(db, real_request)
-        message_metadata.update({"ai_invocation_id": str(real_result.invocation_id) if real_result.invocation_id else None, "invocation_number": real_result.invocation_number, "fallback_used": real_result.fallback_used, "real_model_status": real_result.status, "real_model_error": real_result.error_message})
-        generation_mode = real_result.generation_mode
-        safety_status = real_result.safety_status
-        if real_result.status == "SUCCESS" and real_result.output_text:
-            response_text = real_result.output_text
-        else:
-            generation_mode = "FALLBACK_DETERMINISTIC" if real_result.fallback_used else real_result.generation_mode
+        model_result = agent_model_chat_service.answer(db, session.id, trigger.message_text, task_type=task_type, provider_code=provider_code, model_code=model_code, use_real_model=True, dry_run=dry_run, fallback_text=deterministic_guidance, created_by=case.created_by_role)
+        message_metadata.update(model_result.metadata)
+        message_metadata.update({"ai_invocation_id": str(model_result.invocation_id) if model_result.invocation_id else None, "invocation_number": model_result.invocation_number, "fallback_used": model_result.fallback_used})
+        generation_mode, safety_status, response_text = model_result.generation_mode, model_result.safety_status, model_result.answer
     response = AgentChatMessage(message_id=_next(db, AgentChatMessage, AgentChatMessage.message_id, "AGENT-MSG-"), session_id=session.id, sender_type="AGENT", sender_role="SUPPORT_AGENT", message_text=response_text[:6000], message_format="PLAIN_TEXT", generation_mode=generation_mode, safety_status=safety_status, created_at=_now(), metadata_json=message_metadata)
     db.add(response)
     run.actions_proposed = agent_action_service.generate_proposals(db, case, run)
@@ -261,7 +254,7 @@ def send_message(db: Session, session_id: UUID, request: AgentMessageCreate) -> 
     role = request.sender_role or ("BUSINESS_USER" if request.sender_type.upper() == "USER" else "SERVICE_ENGINEER")
     message = AgentChatMessage(message_id=_next(db, AgentChatMessage, AgentChatMessage.message_id, "AGENT-MSG-"), session_id=session.id, sender_type=request.sender_type.upper(), sender_role=role, message_text=request.message_text, message_format="PLAIN_TEXT", generation_mode="HUMAN_ENTERED", safety_status="NOT_APPLICABLE", created_at=_now())
     db.add(message); db.flush()
-    _orchestrate(db, session, session.case, message, use_real_model=request.use_real_model, provider_code=request.provider_code, model_code=request.model_code, dry_run=request.dry_run)
+    _orchestrate(db, session, session.case, message, use_real_model=request.use_real_model, provider_code=request.provider_code, model_code=request.model_code, dry_run=request.dry_run, task_type=request.task_type)
     db.commit()
     return _session_response(db, session)
 

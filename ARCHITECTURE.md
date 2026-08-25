@@ -666,3 +666,40 @@ integration, streaming, LangGraph/LiteLLM, RAG, embeddings/vector storage,
 tool execution, local observability-stack expansion, distributed tracing,
 browser telemetry, AI classification, ticket analytics, agentic behavior, and
 autonomous resolution remain out of scope for Prompt 13.
+
+## Prompt 24: governed Stage 1 model chat
+
+The Stage 1 model path is deliberately separate from the Prompt 23 action
+executor:
+
+```text
+chat question -> bounded context package -> prompt/safety/limit checks
+             -> existing provider gateway -> output safety check
+             -> assistant metadata + invocation audit
+             -> deterministic fallback when blocked or unavailable
+```
+
+`agent_model_chat_service` curates case, linked operational records, evidence,
+knowledge/known errors, recent chat, and local action status into a bounded
+context package. It excludes keys, secrets, environment values, and tools.
+Governed prompt templates describe Stage 1 read-only behavior and require
+grounded citations. The existing lazy provider gateway remains the only path
+to an OpenAI Responses call; it reads keys from the environment and records
+invocation, usage, and guardrail audit data.
+
+The service enforces explicit task allowlisting, input/context limits, daily
+invocation and estimated-cost limits, pre-call safety checks, and post-call
+checks for execution claims, commands, SQL, secrets, external sends, and
+approval bypass. Preview and dry-run are non-mutating. Ask with
+`use_real_model=false`, disabled readiness, missing credentials, provider
+failure, or a failed check stays deterministic and reports the fallback reason.
+Assistant metadata retains generation mode, invocation ID, usage/status,
+evidence used, knowledge used, and the Stage 1 boundary; actions executed
+remains zero.
+
+Prompt 23 local actions still require separate human approval and explicit
+execution. Prompt 24 never invokes those handlers. A future Stage 3 design
+would need a new authorization, tool, and external-system governance boundary;
+it is not implied by model chat activation. Streaming, voice, browser use,
+vector databases, ServiceNow, customer sends, and autonomous remediation remain
+future work.

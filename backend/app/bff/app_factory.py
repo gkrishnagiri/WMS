@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
 
-from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, ai_config_router, ams_router, batch_router, copilot_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, user_reports_router, warehouse_router
+from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ams_router, batch_router, copilot_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, user_reports_router, warehouse_router
 from app.api.routes.facades import agentic_router, business_router, observability_router as observability_facade_router, operations_router as operations_facade_router, simulation_router
 from app.api.routes.platform import router as platform_router
 from app.core.config import get_settings
@@ -36,6 +36,7 @@ ROUTERS = {
     "agent_knowledge": agent_knowledge_router,
     "agent_investigations": agent_investigations_router,
     "agent_actions": agent_actions_router,
+    "agent_model_chat": agent_model_chat_router,
     "batch": batch_router,
     "copilot": copilot_router,
     "ai_config": ai_config_router,
@@ -109,6 +110,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "ai_config", ("/api/v1/ai-config/real-model/status", "/api/v1/ai-config/real-model/dry-run"))
         _include_group(application, "agent_investigations")
         _include_group(application, "agent_actions")
+        _include_group(application, "agent_model_chat")
     elif definition.code == "simulation":
         application.include_router(simulation_router)
         _include_group(application, "synthetic_users")
@@ -131,6 +133,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_knowledge")
         _include_group(application, "agent_investigations")
         _include_group(application, "agent_actions")
+        _include_group(application, "agent_model_chat")
     else:
         raise ValueError(f"Unsupported BFF experience: {definition.code}")
 

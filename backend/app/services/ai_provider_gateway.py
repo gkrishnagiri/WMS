@@ -36,6 +36,9 @@ TASK_TEMPLATE_DEFAULTS = {
     "AGENT_STAGE_1_GUIDANCE": "TPL-AGENT-STAGE-1-GUIDANCE",
     "AGENT_KNOWLEDGE_SUMMARY": "TPL-AGENT-KNOWLEDGE-SUMMARY",
     "AGENT_EVIDENCE_SUMMARY": "TPL-AGENT-EVIDENCE-SUMMARY",
+    "AGENT_STAGE_1_CHAT": "TPL-AGENT-STAGE-1-CHAT",
+    "AGENT_INVESTIGATION_QA": "TPL-AGENT-INVESTIGATION-QA",
+    "AGENT_KNOWLEDGE_GROUNDED_ANSWER": "TPL-AGENT-KNOWLEDGE-GROUNDED-ANSWER",
     "CUSTOMER_FACING_ISSUE_GUIDANCE": "TPL-CUSTOMER-FACING-ISSUE-GUIDANCE",
     "SERVICE_ENGINEER_INVESTIGATION_GUIDANCE": "TPL-SERVICE-ENGINEER-INVESTIGATION-GUIDANCE",
 }
@@ -139,14 +142,14 @@ def invoke(db: Session, *, task_type: str, input_payload: dict, request_source: 
 
 def _real_model_code(settings: Settings) -> str:
     """Translate the configured external model name to the catalog code."""
-    if settings.openai_default_model == "gpt-5.4-mini":
-        return "OPENAI_GPT_5_4_MINI"
-    return "OPENAI_GPT_5_4_MINI"
+    return settings.openai_default_model or "OPENAI_GPT_5_4_MINI"
 
 
 def _resolve_real_configuration(db: Session, request: RealModelRequest) -> tuple[AiProvider | None, AiModelConfig | None, AiPromptTemplate | None, AiSafetyPolicy | None]:
     provider = db.scalar(select(AiProvider).where(AiProvider.provider_code == request.provider_code))
     model = db.scalar(select(AiModelConfig).where(AiModelConfig.model_code == request.model_code))
+    if model is None:
+        model = db.scalar(select(AiModelConfig).where(AiModelConfig.model_name == request.model_code))
     template = db.scalar(
         select(AiPromptTemplate).where(
             AiPromptTemplate.template_code == (request.metadata.get("template_code") or TASK_TEMPLATE_DEFAULTS.get(request.task_type.upper(), "TPL-AGENT-STAGE-1-GUIDANCE")),
@@ -162,6 +165,10 @@ def real_model_status(db: Session, *, provider_code: str = "OPENAI_RESPONSES", m
     selected_model_code = model_code or _real_model_code(settings)
     provider = db.scalar(select(AiProvider).where(AiProvider.provider_code == provider_code))
     model = db.scalar(select(AiModelConfig).where(AiModelConfig.model_code == selected_model_code))
+    if model is None:
+        model = db.scalar(select(AiModelConfig).where(AiModelConfig.model_name == selected_model_code))
+    if model is not None:
+        selected_model_code = model.model_code
     provider_configured = provider is not None
     model_configured = model is not None and (provider is None or model.provider_id == provider.id)
     provider_enabled = bool(provider and provider.enabled)

@@ -182,6 +182,7 @@ export const sendAgentMessage = (
     provider_code?: string;
     model_code?: string;
     dry_run?: boolean;
+    task_type?: string;
   } = {},
 ) =>
   request<AgentSession>(`/api/v1/agent-chat/sessions/${id}/messages`, {
