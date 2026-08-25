@@ -18,6 +18,7 @@ from app.models.monitoring import MonAlert, MonAlertRule, MonComponent
 from app.models.operations import OpsException
 from app.models.synthetic_users import SyntheticUser
 from app.models.user_reports import AmsUserReport
+from app.models.ui_acceptance import UiTestCase, UiTestRun, UiTestStep, UiTestSuite
 from app.models.warehouse import Warehouse
 from app.services import agent_model_chat_service, demo_scenario_service
 
@@ -93,6 +94,10 @@ def checks(db: Session) -> list[dict[str, Any]]:
         _check("ServiceNow not configured", "SERVICENOW_NOT_CONFIGURED", True, "No ServiceNow connector is configured.", critical=False),
         _check("Frontend URL list available", "FRONTEND_URL_LIST", True, "Presenter URL launcher is statically defined."),
         _check("BFF route boundaries expected", "BFF_BOUNDARIES", True, "Read-only readiness is available only on approved experience BFFs."),
+        _check("UI Acceptance Catalog", "UI_ACCEPTANCE_CATALOG", (_count(db, UiTestSuite) > 0 and _count(db, UiTestCase) > 0 and _count(db, UiTestStep) > 0) if database_ok else False, "Manual UI acceptance suites, cases, and steps are seeded."),
+        _check("UI Acceptance Run Tracker", "UI_ACCEPTANCE_RUN_TRACKER", _count(db, UiTestRun) >= 0 if database_ok else False, "UI acceptance run tracking tables are queryable."),
+        _check("Evidence Report", "UI_ACCEPTANCE_EVIDENCE_REPORT", database_ok, "Step evidence and markdown report endpoints are registered."),
+        _check("Latest UI Test Run", "UI_ACCEPTANCE_LATEST_RUN", True, "No run is required for readiness; latest run is reported when available.", critical=False),
     ]
     return items
 
@@ -171,7 +176,7 @@ def ui_test_guide() -> dict[str, Any]:
 
 def smoke_report(db: Session) -> dict[str, Any]:
     readiness = summary(db)
-    return {"generated_at": _now(), "stack_urls": {"full_backend": "http://localhost:8050", "business_bff": "http://localhost:8061", "operations_bff": "http://localhost:8062", "simulation_bff": "http://localhost:8063", "observability_bff": "http://localhost:8064", "agentic_bff": "http://localhost:8065"}, "readiness": readiness, "seed_counts": {"warehouses": _count(db, Warehouse), "synthetic_users": _count(db, SyntheticUser), "monitoring_components": _count(db, MonComponent), "batch_jobs": _count(db, BatchJob), "ai_providers": _count(db, AiProvider), "knowledge_sources": _count(db, AgentKnowledgeSource), "scenario_catalog": _count(db, DemoScenario)}, "scenario_counts": {"runs": _count(db, DemoScenarioRun), "active_runs": int(db.scalar(select(func.count(DemoScenarioRun.id)).where(DemoScenarioRun.status == "IN_PROGRESS")) or 0), "completed_runs": int(db.scalar(select(func.count(DemoScenarioRun.id)).where(DemoScenarioRun.status == "COMPLETED")) or 0)}, "investigation_counts": {"cases": _count(db, AgentCase), "handoffs": _count(db, AgentOrchestrationRun)}, "action_counts": {"proposals": _count(db, AgentActionProposal), "executions": _count(db, AgentActionExecution)}, "model_default": {"real_model_enabled": False, "autonomous_remediation_enabled": False, "provider_status_endpoint": "http://localhost:8050/api/v1/agent-model-chat/status"}, "bff_exposure": {"business_read_only": True, "operations": True, "simulation": True, "agentic": True, "observability": False}, "known_warnings": readiness["warnings"]}
+    return {"generated_at": _now(), "stack_urls": {"full_backend": "http://localhost:8050", "business_bff": "http://localhost:8061", "operations_bff": "http://localhost:8062", "simulation_bff": "http://localhost:8063", "observability_bff": "http://localhost:8064", "agentic_bff": "http://localhost:8065"}, "readiness": readiness, "seed_counts": {"warehouses": _count(db, Warehouse), "synthetic_users": _count(db, SyntheticUser), "monitoring_components": _count(db, MonComponent), "batch_jobs": _count(db, BatchJob), "ai_providers": _count(db, AiProvider), "knowledge_sources": _count(db, AgentKnowledgeSource), "scenario_catalog": _count(db, DemoScenario), "ui_acceptance_suites": _count(db, UiTestSuite), "ui_acceptance_cases": _count(db, UiTestCase), "ui_acceptance_steps": _count(db, UiTestStep)}, "scenario_counts": {"runs": _count(db, DemoScenarioRun), "active_runs": int(db.scalar(select(func.count(DemoScenarioRun.id)).where(DemoScenarioRun.status == "IN_PROGRESS")) or 0), "completed_runs": int(db.scalar(select(func.count(DemoScenarioRun.id)).where(DemoScenarioRun.status == "COMPLETED")) or 0)}, "investigation_counts": {"cases": _count(db, AgentCase), "handoffs": _count(db, AgentOrchestrationRun)}, "action_counts": {"proposals": _count(db, AgentActionProposal), "executions": _count(db, AgentActionExecution)}, "ui_acceptance_counts": {"runs": _count(db, UiTestRun), "latest_run_status": (db.scalar(select(UiTestRun.status).order_by(UiTestRun.started_at.desc())) or None)}, "model_default": {"real_model_enabled": False, "autonomous_remediation_enabled": False, "provider_status_endpoint": "http://localhost:8050/api/v1/agent-model-chat/status"}, "bff_exposure": {"business_read_only": True, "operations": True, "simulation": True, "agentic": True, "observability": False}, "known_warnings": readiness["warnings"]}
 
 
 def prepare_showcase(db: Session, profile: str, create_prepared_runs: bool, created_by_role: str) -> dict[str, Any]:

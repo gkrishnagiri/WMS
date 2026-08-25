@@ -1295,3 +1295,33 @@ All readiness metrics are local EOS checks. Deterministic/mock behavior remains
 the default; no OpenAI key is required. Prompt 27 adds no autonomous
 remediation, shell/SQL execution, ServiceNow integration, customer sends,
 authentication, or production reset tooling.
+
+## Prompt 28 UI acceptance testing and evidence capture
+
+Prompt 28 adds manual, browser-first acceptance testing at `/ui-acceptance`.
+The seeded catalog contains eight suites covering the executive dashboard,
+demo readiness, all four guided scenarios, operational handoffs, the
+investigation workspace, Stage 1 model fallback, Stage 2 approval-gated
+actions, and governance boundaries. Testers start a run, follow the stored
+click-by-click steps, and record pass/fail/warning/block status, observed
+results, evidence notes, screenshot filenames or locations, and defects.
+
+```bash
+python -m app.db.seed_ui_acceptance_tests
+./scripts/ui-acceptance-summary.sh
+UI_RUN=$(./scripts/ui-acceptance-start-run.sh | jq -r .run_id)
+./scripts/ui-acceptance-report.sh "$UI_RUN"
+```
+
+The UI also provides `/ui-acceptance/suites`, `/ui-acceptance/runs`,
+`/ui-acceptance/runs/<RUN_ID>`, and `/ui-acceptance/runs/<RUN_ID>/report`.
+Markdown reports are available from the report page/API. Screenshots are not
+uploaded; references remain text evidence only. Business receives catalog and
+report GET endpoints but cannot start, record, complete, or abort runs.
+
+Acceptance records are local test evidence, not automated E2E results. Starting
+or closing a test run is explicit; readiness and reporting never start runs or
+invoke models. Deterministic/mock behavior remains the default, and Prompt 28
+adds no browser automation, autonomous remediation, shell/SQL execution,
+ServiceNow integration, customer communication, authentication, or external
+service calls.

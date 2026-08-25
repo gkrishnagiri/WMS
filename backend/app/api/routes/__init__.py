@@ -9,6 +9,7 @@ from app.api.routes.copilot import router as copilot_router
 from app.api.routes.demo_control import router as demo_control_router
 from app.api.routes.demo_scenarios import router as demo_scenarios_router
 from app.api.routes.demo_readiness import router as demo_readiness_router
+from app.api.routes.ui_acceptance import router as ui_acceptance_router
 from app.api.routes.executive_demo import router as executive_demo_router
 from app.api.routes.operations import router as operations_router
 from app.api.routes.monitoring import router as monitoring_router
@@ -51,6 +52,7 @@ router.include_router(copilot_router)
 router.include_router(demo_control_router)
 router.include_router(demo_scenarios_router)
 router.include_router(demo_readiness_router)
+router.include_router(ui_acceptance_router)
 router.include_router(executive_demo_router)
 router.include_router(platform_router)
 router.include_router(facade_router)

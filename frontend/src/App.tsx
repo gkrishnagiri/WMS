@@ -23,6 +23,7 @@ import { AgentInvestigationDetailPage, AgentInvestigationsPage } from "./pages/A
 import { DemoScenarioCatalogPage, DemoScenarioRunPage, DemoScenarioRunsPage } from "./pages/DemoScenarioPages";
 import { ExecutiveDemoPage, ExecutiveGovernancePage, ExecutiveStoryboardPage, ExecutiveValuePage } from "./pages/ExecutiveDemoPages";
 import { DemoReadinessGuidePage, DemoReadinessPage, DemoReadinessShowcasePage, DemoReadinessSmokePage } from "./pages/DemoReadinessPages";
+import { UIAcceptanceDashboardPage, UIAcceptanceReportPage, UIAcceptanceRunPage, UIAcceptanceRunsPage, UIAcceptanceSuitesPage } from "./pages/UIAcceptancePages";
 
 export default function App() {
   return (
@@ -41,6 +42,11 @@ export default function App() {
         <Route path="/demo-readiness/showcase" element={<DemoReadinessShowcasePage />} />
         <Route path="/demo-readiness/ui-test-guide" element={<DemoReadinessGuidePage />} />
         <Route path="/demo-readiness/smoke-report" element={<DemoReadinessSmokePage />} />
+        <Route path="/ui-acceptance" element={<UIAcceptanceDashboardPage />} />
+        <Route path="/ui-acceptance/suites" element={<UIAcceptanceSuitesPage />} />
+        <Route path="/ui-acceptance/runs" element={<UIAcceptanceRunsPage />} />
+        <Route path="/ui-acceptance/runs/:runId/report" element={<UIAcceptanceReportPage />} />
+        <Route path="/ui-acceptance/runs/:runId" element={<UIAcceptanceRunPage />} />
         <Route path="/observability-alerts" element={<ObservabilityAlertsPage />} />
         <Route path="/observability-alerts/rules" element={<ObservabilityAlertRulesPage />} />
         <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />

@@ -815,3 +815,40 @@ showcase controls, UI guide, and smoke report in the approved experiences.
 Prompt 27 is showcase hardening only: real model use stays disabled by default,
 autonomous remediation and external integrations remain out of scope, and no
 production reset or authentication boundary is implied.
+
+## Prompt 28 UI acceptance testing and evidence capture
+
+The UI acceptance layer is a manual evidence ledger over the browser routes
+already provided by EOS:
+
+```text
+seeded suite/case/step catalog -> tester starts run
+                                  -> browser observation
+                                  -> step result + evidence reference
+                                  -> coverage + JSON/Markdown report
+```
+
+`ui_test_suites`, `ui_test_cases`, and `ui_test_steps` define deterministic
+browser guidance. `ui_test_runs` stores the tester and lifecycle, while
+`ui_test_step_results` stores status, observed result, evidence note,
+screenshot reference, and defect note. `ui_test_run_events` provides a small
+run audit trail. The service validates that submitted steps belong to the
+selected suites, upserts results idempotently, calculates coverage, and derives
+overall completion status. Markdown is rendered from stored text; screenshot
+binary upload and PDF generation are intentionally not included.
+
+The catalog covers executive value, demo readiness/showcase, all four guided
+scenarios, operations-to-agent handoffs, investigation evidence, governed
+Stage 1 fallback, Stage 2 approval-gated actions, and experience/governance
+boundaries. Mutating steps are explicitly labeled with local safety notes so a
+tester knows when a scenario start, showcase preparation, approval, or action
+execution is expected. The acceptance service itself never invokes a model or
+executes operational actions.
+
+Full, Operations, Simulation, and Agentic expose the complete acceptance API.
+Business exposes only catalog, run, coverage, and report GET routes; mutation
+routes are absent. Observability exposes no acceptance surface. Demo readiness
+checks catalog/run/report availability without starting a test run. Prompt 28
+adds manual browser-first testing only: no browser automation, external test
+SaaS, real-model requirement, autonomous remediation, shell/SQL execution,
+ServiceNow integration, customer sends, or authentication.

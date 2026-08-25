@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
 
-from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ams_router, batch_router, copilot_router, demo_readiness_router, demo_scenarios_router, executive_demo_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, user_reports_router, warehouse_router
+from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ams_router, batch_router, copilot_router, demo_readiness_router, demo_scenarios_router, executive_demo_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, ui_acceptance_router, user_reports_router, warehouse_router
 from app.api.routes.facades import agentic_router, business_router, observability_router as observability_facade_router, operations_router as operations_facade_router, simulation_router
 from app.api.routes.platform import router as platform_router
 from app.core.config import get_settings
@@ -42,6 +42,7 @@ ROUTERS = {
     "ai_config": ai_config_router,
     "demo_scenarios": demo_scenarios_router,
     "demo_readiness": demo_readiness_router,
+    "ui_acceptance": ui_acceptance_router,
     "executive_demo": executive_demo_router,
 }
 
@@ -107,6 +108,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_knowledge", ("/api/v1/agent-knowledge/summary", "/api/v1/agent-knowledge/search"))
         application.include_router(_filtered_exact_router(demo_scenarios_router, ("/api/v1/demo-scenarios/summary", "/api/v1/demo-scenarios/catalog")))
         application.include_router(_filtered_exact_router(demo_readiness_router, ("/api/v1/demo-readiness/summary", "/api/v1/demo-readiness/checks", "/api/v1/demo-readiness/showcase", "/api/v1/demo-readiness/urls", "/api/v1/demo-readiness/ui-test-guide", "/api/v1/demo-readiness/smoke-report", "/api/v1/demo-readiness/reset-profiles")))
+        application.include_router(_filtered_exact_router(ui_acceptance_router, ("/api/v1/ui-acceptance/summary", "/api/v1/ui-acceptance/suites", "/api/v1/ui-acceptance/cases", "/api/v1/ui-acceptance/cases/{case_code}", "/api/v1/ui-acceptance/runs", "/api/v1/ui-acceptance/runs/{run_id}", "/api/v1/ui-acceptance/runs/{run_id}/report", "/api/v1/ui-acceptance/runs/{run_id}/report.md", "/api/v1/ui-acceptance/coverage")))
         _include_group(application, "executive_demo")
     elif definition.code == "operations":
         application.include_router(operations_facade_router)
@@ -126,6 +128,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_model_chat")
         _include_group(application, "demo_scenarios")
         _include_group(application, "demo_readiness")
+        _include_group(application, "ui_acceptance")
         _include_group(application, "executive_demo")
     elif definition.code == "simulation":
         application.include_router(simulation_router)
@@ -135,6 +138,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "observability", ("/api/v1/observability/simulations",))
         _include_group(application, "demo_scenarios")
         _include_group(application, "demo_readiness")
+        _include_group(application, "ui_acceptance")
         _include_group(application, "executive_demo")
         _include_group(application, "observability_stack", ("/api/v1/observability-stack/test",))
     elif definition.code == "observability":
@@ -155,6 +159,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_model_chat")
         _include_group(application, "demo_scenarios")
         _include_group(application, "demo_readiness")
+        _include_group(application, "ui_acceptance")
         _include_group(application, "executive_demo")
     else:
         raise ValueError(f"Unsupported BFF experience: {definition.code}")

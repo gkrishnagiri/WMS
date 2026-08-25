@@ -79,4 +79,4 @@ def test_readiness_bff_exposure_boundaries():
 
 def test_demo_control_advertises_readiness_capabilities():
     capabilities = demo_control_urls()["capabilities"]
-    assert {"Demo Readiness", "Showcase Mode", "Reset Profiles", "UI Test Guide", "Smoke Report"} <= set(capabilities)
+    assert {"Demo Readiness", "Showcase Mode", "Reset Profiles", "UI Test Guide", "Smoke Report", "UI Acceptance Catalog", "UI Acceptance Run Tracker", "Evidence Report"} <= set(capabilities)

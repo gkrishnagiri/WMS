@@ -13,6 +13,7 @@ from app.models.agent_knowledge import AgentKnowledgeArticle, AgentKnowledgeChun
 from app.models.synthetic_users import SyntheticJourney, SyntheticJourneyRun, SyntheticUser
 from app.models.user_reports import AmsUserReport
 from app.models.demo_scenario import DemoScenario, DemoScenarioRun, DemoScenarioStep, DemoScenarioArtifact, DemoScenarioEvent
+from app.models.ui_acceptance import UiTestSuite, UiTestCase, UiTestStep, UiTestRun, UiTestStepResult, UiTestRunEvent
 
 from app.models.warehouse import (
     Allocation,
@@ -105,4 +106,10 @@ __all__ = [
     "DemoScenarioStep",
     "DemoScenarioArtifact",
     "DemoScenarioEvent",
+    "UiTestSuite",
+    "UiTestCase",
+    "UiTestStep",
+    "UiTestRun",
+    "UiTestStepResult",
+    "UiTestRunEvent",
 ]
