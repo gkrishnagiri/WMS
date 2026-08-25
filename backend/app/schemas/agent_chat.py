@@ -109,6 +109,7 @@ class AgentHandoffResponse(BaseModel):
     generation_mode: str
     actions_executed: int
     agent_chat_url: str
+    agent_investigation_url: str
     message: str
     session: dict
 

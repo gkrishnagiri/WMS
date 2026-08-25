@@ -1123,3 +1123,26 @@ Endpoints are under `/api/v1/agent-chat/intake`: `from-ams-ticket`,
 handoffs; Business exposes user-report handoff; Simulation does not expose
 agent handoffs. No external model call, remediation, or ServiceNow integration
 is present.
+
+## Prompt 22 agent investigation workspace
+
+Prompt 22 adds a unified read-only workspace at `/agent-investigations` and
+`/agent-investigations/:caseId` for Full, Operations, and Agentic experiences.
+It consolidates contextual source metadata, linked records, chat, evidence,
+knowledge, known errors, orchestration runs, disabled action proposals, and a
+chronological evidence timeline. The workspace is available through the Full
+backend, Operations BFF, and Agentic BFF.
+
+The workspace computes four deterministic drafts: investigation summary, AMS
+work note, customer update, and human next-steps checklist. Drafts are not
+posted or sent anywhere and always require human review. Actions executed
+remains zero; real model use remains off by default and no external LLM,
+ServiceNow, or remediation execution is introduced.
+
+Validate with:
+
+```bash
+curl -sS http://localhost:8050/api/v1/agent-investigations/summary | jq .
+curl -sS http://localhost:8050/api/v1/agent-investigations/cases | jq .
+curl -sS -X POST http://localhost:8050/api/v1/agent-investigations/cases/<CASE_ID>/generate-drafts -H 'Content-Type: application/json' -d '{}' | jq .
+```

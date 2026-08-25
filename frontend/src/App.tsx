@@ -19,6 +19,7 @@ import { DemoControlPage } from "./pages/DemoControlPage";
 import { ObservabilityAlertEventDetailPage, ObservabilityAlertEvaluationRunsPage, ObservabilityAlertEventsPage, ObservabilityAlertRulesPage, ObservabilityAlertsPage } from "./pages/ObservabilityAlertPages";
 import { AgentCaseDetailPage, AgentCasesPage, AgentChatHomePage, AgentIntakePage, AgentSessionDetailPage, AgentSessionsPage } from "./pages/AgentChatPages";
 import { AgentKnowledgeArticleDetailPage, AgentKnowledgeArticlesPage, AgentKnowledgeHomePage, AgentKnowledgeSearchPage, AgentKnowledgeSourcesPage, AgentKnownErrorDetailPage, AgentKnownErrorsPage, AgentRetrievalQueriesPage, AgentRetrievalQueryDetailPage } from "./pages/AgentKnowledgePages";
+import { AgentInvestigationDetailPage, AgentInvestigationsPage } from "./pages/AgentInvestigationPages";
 
 export default function App() {
   return (
@@ -47,6 +48,8 @@ export default function App() {
         <Route path="/agent-knowledge/known-errors/:knownErrorId" element={<AgentKnownErrorDetailPage />} />
         <Route path="/agent-knowledge/retrieval-queries" element={<AgentRetrievalQueriesPage />} />
         <Route path="/agent-knowledge/retrieval-queries/:queryId" element={<AgentRetrievalQueryDetailPage />} />
+        <Route path="/agent-investigations" element={<AgentInvestigationsPage />} />
+        <Route path="/agent-investigations/:caseId" element={<AgentInvestigationDetailPage />} />
         <Route path="/health" element={<HealthPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/warehouse" element={<WarehousePage />} />

@@ -305,6 +305,9 @@ export function AgentCaseDetailPage() {
               <Button component={Link} to="/agent-chat/sessions" sx={{ mt: 2 }}>
                 View chat sessions
               </Button>
+              <Button component={Link} to={`/agent-investigations/${detail.data.id}`} sx={{ mt: 2, ml: 1 }}>
+                Open Investigation Workspace
+              </Button>
             </CardContent>
           </Card>
           <Grid container spacing={3}>
@@ -590,6 +593,9 @@ export function AgentSessionDetailPage() {
             >
               Close Session
             </Button>
+            {session.data.case && <Button component={Link} to={`/agent-investigations/${session.data.case.id}`} sx={{ ml: 1 }}>
+              View Investigation Workspace
+            </Button>}
           </Box>
           <SessionView
             session={session.data}

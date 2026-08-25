@@ -194,6 +194,17 @@ async def test_agent_knowledge_bff_route_boundaries(each_bff_client):
 
 
 @pytest.mark.anyio
+async def test_investigation_workspace_bff_route_boundaries(each_bff_client):
+    client, code = each_bff_client
+    response = await client.get("/api/v1/agent-investigations/summary")
+    if code in ("operations", "agentic"):
+        assert response.status_code == 200
+        assert response.json()["actions_executed"] == 0
+    else:
+        assert response.status_code == 404
+
+
+@pytest.mark.anyio
 async def test_bff_cors_preflight_allows_its_frontend(each_bff_client):
     client, code = each_bff_client
     origin = get_experience(code).allowed_origins[0]

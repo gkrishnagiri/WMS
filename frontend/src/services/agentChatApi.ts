@@ -123,6 +123,7 @@ export interface AgentHandoff {
   generation_mode: string;
   actions_executed: number;
   agent_chat_url: string;
+  agent_investigation_url: string;
   message: string;
   session: AgentSession;
 }

@@ -104,3 +104,22 @@ async def test_contextual_ticket_handoff_reuses_active_investigation(agent_clien
 async def test_contextual_handoff_source_routes_return_not_found_for_missing_source(agent_client):
     response = await agent_client.post("/api/v1/agent-chat/intake/from-operations-exception/00000000-0000-0000-0000-000000000000", json={})
     assert response.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_investigation_workspace_timeline_and_drafts(agent_client):
+    ticket = await agent_client.post("/api/v1/ams/tickets", json={"short_description": "Shipment is delayed", "description": "Carrier synchronization is delayed.", "severity": "MEDIUM", "priority": "P3"})
+    handoff = await agent_client.post(f"/api/v1/agent-chat/intake/from-ams-ticket/{ticket.json()['id']}", json={})
+    assert handoff.status_code == 201
+    case_id = handoff.json()["case_record_id"]
+    workspace = await agent_client.get(f"/api/v1/agent-investigations/cases/{case_id}")
+    assert workspace.status_code == 200
+    assert workspace.json()["case"]["source_object_type"] == "AMS_TICKET"
+    assert workspace.json()["counts"]["actions_executed"] == 0
+    timeline = await agent_client.get(f"/api/v1/agent-investigations/cases/{case_id}/timeline")
+    assert timeline.status_code == 200
+    assert {item["item_type"] for item in timeline.json()} >= {"CASE_CREATED", "SOURCE_LINKED", "CHAT_MESSAGE", "AGENT_RESPONSE", "ORCHESTRATION_RUN"}
+    drafts = await agent_client.post(f"/api/v1/agent-investigations/cases/{case_id}/generate-drafts", json={})
+    assert drafts.status_code == 200
+    assert drafts.json()["human_review_required"] is True
+    assert "Human review required" in drafts.json()["work_note_draft"]["content"]

@@ -15,7 +15,7 @@ export function InvestigateWithAgentButton({
   const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: () => handoffWithAgent(sourceType, sourceId),
-    onSuccess: (result) => navigate(result.agent_chat_url),
+    onSuccess: (result) => navigate(result.agent_investigation_url || result.agent_chat_url),
   });
   return (
     <Stack direction="row" spacing={1} alignItems="center">

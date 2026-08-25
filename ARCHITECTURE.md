@@ -576,6 +576,23 @@ Simulation remains isolated. This is a demo/API boundary, not authorization;
 Prompt 21 does not enable real models, execute actions, integrate ServiceNow,
 or change infrastructure.
 
+## Agent investigation workspace
+
+Prompt 22 provides a computed workspace over an `agent_case`. It joins the
+contextual handoff source, linked AMS/alert/batch/diagnostic records, chat
+messages, orchestration runs, evidence, deterministic retrieval results, and
+disabled action proposals. A timeline builder turns those records into
+chronological case, source, conversation, orchestration, evidence, knowledge,
+and proposal events.
+
+The workspace also produces deterministic investigation summary, AMS work-note,
+customer-update, and next-steps drafts. These are display/copy artifacts only;
+they are not persisted to external systems, sent to customers, or applied to
+tickets. The Stage 1 banner remains authoritative: remediation execution is
+disabled, actions executed is zero, and real-model use is not enabled by
+default. Full, Operations, and Agentic BFFs expose the workspace while the
+Business, Simulation, and Observability BFFs do not.
+
 ## Deferred items
 
 Application traces and Tempo, metrics instrumentation, background workers,

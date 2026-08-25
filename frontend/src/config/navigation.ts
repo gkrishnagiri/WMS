@@ -20,6 +20,7 @@ export const navigation: NavigationItem[] = [
   { label: "Engineer Chat", path: "/agent-chat/engineer", experiences: ["full", "operations", "agentic"] },
   { label: "Agent Cases", path: "/agent-chat/cases", experiences: ["full", "operations", "agentic"] },
   { label: "Agent Sessions", path: "/agent-chat/sessions", experiences: ["full", "operations", "agentic"] },
+  { label: "Investigations", path: "/agent-investigations", experiences: ["full", "operations", "agentic"] },
   { label: "Agent Knowledge", path: "/agent-knowledge", experiences: ["full", "operations", "agentic"] },
   { label: "Knowledge Search", path: "/agent-knowledge/search", experiences: ["full", "business", "operations", "agentic"] },
   { label: "Knowledge Articles", path: "/agent-knowledge/articles", experiences: ["full", "operations", "agentic"] },
