@@ -778,3 +778,40 @@ cannot start scenarios, invoke a model, or execute an action. Prompt 26 does
 not enable real model calls by default, add autonomous remediation, execute
 shell/SQL/code, integrate ServiceNow, send customer communications, add
 authentication, or claim production savings.
+
+## Prompt 27 demo readiness and one-command showcase mode
+
+The readiness layer is a local, presenter-oriented projection over existing
+EOS seed, scenario, investigation, action, and model-governance records:
+
+```text
+seed/database checks + route checks + safety defaults
+                         -> readiness summary/checks
+                         -> showcase preparation + URL launcher + UI guide
+                         -> repeatable presenter flow
+```
+
+`demo_readiness_service` keeps reporting read-only. Its `SOFT_RESET` profile
+marks active guided runs reset and preserves scenario events, operational
+records, action audit, model invocation audit, and investigations. Its
+`SHOWCASE_RESET` profile also idempotently ensures the four scenario catalog
+rows. `LOCAL_DEV_GENERATED_DATA_RESET` requires the exact local confirmation
+string and uses the same archive-by-status approach; it does not drop schema,
+delete seed data, or wipe audit history. Prepared runs are created only by an
+explicit `prepare-showcase` request and are still presenter-controlled; the
+service never approves or executes actions and never calls a model.
+
+The API provides readiness checks, grouped presenter URLs, a human-executable
+UI test guide, and a smoke report. Demo Control includes readiness, showcase,
+reset-profile, UI-guide, and smoke-report capabilities without invoking reset,
+scenario, model, or action operations. Demo scripts call only the local
+readiness API; they do not contain database or external-system operations.
+
+Full, Operations, Simulation, and Agentic expose the complete readiness surface.
+Business receives only read-only GET endpoints, and Observability receives no
+readiness routes. The frontend mirrors this boundary by hiding mutation
+controls in Business and presenting score, safety badges, URL launcher,
+showcase controls, UI guide, and smoke report in the approved experiences.
+Prompt 27 is showcase hardening only: real model use stays disabled by default,
+autonomous remediation and external integrations remain out of scope, and no
+production reset or authentication boundary is implied.

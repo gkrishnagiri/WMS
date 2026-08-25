@@ -1260,3 +1260,38 @@ curl -sS http://localhost:8050/api/v1/executive-demo/storyboard | jq .
 curl -sS http://localhost:8050/api/v1/executive-demo/governance | jq .
 curl -sS http://localhost:8050/api/v1/executive-demo/commercial-model | jq .
 ```
+
+## Prompt 27 demo readiness and showcase mode
+
+Prompt 27 adds a repeatable local-demo preparation surface at
+`/demo-readiness`. It reports seed and route readiness, model-default safety,
+scenario readiness, a presenter URL launcher, a browser UI test guide, and a
+compact smoke report. The showcase page can prepare a clean local state and
+optionally create one prepared run for each of the four guided scenarios.
+
+```bash
+./scripts/demo-smoke-report.sh
+./scripts/prepare-showcase.sh
+./scripts/reset-demo-readiness.sh --profile SOFT_RESET
+./scripts/open-demo-urls.sh
+```
+
+Reset profiles are `SOFT_RESET` (mark active runs reset while retaining
+history), `SHOWCASE_RESET` (verify the four scenario catalog entries and reset
+active runs), and `LOCAL_DEV_GENERATED_DATA_RESET` (the same safe archive/mark
+behavior with required confirmation `RESET_LOCAL_DEMO_GENERATED_DATA`). No
+profile drops schema, deletes seed data, or removes audit history. Showcase
+preparation never calls the real model, approves actions, or executes actions.
+The reset and preparation APIs are intentionally absent from the Business BFF;
+Business receives only read-only readiness reporting.
+
+```bash
+curl -sS http://localhost:8050/api/v1/demo-readiness/summary | jq .
+curl -sS http://localhost:8050/api/v1/demo-readiness/ui-test-guide | jq .
+curl -sS http://localhost:8050/api/v1/demo-readiness/smoke-report | jq .
+```
+
+All readiness metrics are local EOS checks. Deterministic/mock behavior remains
+the default; no OpenAI key is required. Prompt 27 adds no autonomous
+remediation, shell/SQL execution, ServiceNow integration, customer sends,
+authentication, or production reset tooling.

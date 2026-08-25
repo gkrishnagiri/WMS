@@ -38,7 +38,7 @@ def urls() -> dict[str, object]:
     return {
         "experiences": _experience_payload(),
         "observability": OBSERVABILITY_URLS,
-        "capabilities": ["Stage 2 Action Catalog", "Approval-Gated Actions", "Action Execution Audit", "Governed Stage 1 Model Chat", "Model Context Preview", "Model Invocation Audit", "Demo Scenario Catalog", "Guided Scenario Runs", "Scenario Artifact Linking", "Scenario Timeline", "Executive Demo Dashboard", "Value Metrics", "Executive Storyboard", "Governance Dashboard", "Commercial Model View"],
+        "capabilities": ["Stage 2 Action Catalog", "Approval-Gated Actions", "Action Execution Audit", "Governed Stage 1 Model Chat", "Model Context Preview", "Model Invocation Audit", "Demo Scenario Catalog", "Guided Scenario Runs", "Scenario Artifact Linking", "Scenario Timeline", "Executive Demo Dashboard", "Value Metrics", "Executive Storyboard", "Governance Dashboard", "Commercial Model View", "Demo Readiness", "Showcase Mode", "Reset Profiles", "UI Test Guide", "Smoke Report"],
         "logs_directory": "/tmp/eos-demo/logs",
         "runtime_directory": "/tmp/eos-demo",
     }
@@ -114,6 +114,11 @@ def readiness() -> DemoReadinessResponse:
     items.append(_http_item("Executive Storyboard", "backend", "http://localhost:8050/api/v1/executive-demo/storyboard"))
     items.append(_http_item("Governance Dashboard", "backend", "http://localhost:8050/api/v1/executive-demo/governance"))
     items.append(_http_item("Commercial Model View", "backend", "http://localhost:8050/api/v1/executive-demo/commercial-model"))
+    items.append(_http_item("Demo Readiness", "backend", "http://localhost:8050/api/v1/demo-readiness/summary"))
+    items.append(_http_item("Showcase Mode", "backend", "http://localhost:8050/api/v1/demo-readiness/showcase"))
+    items.append(_http_item("Reset Profiles", "backend", "http://localhost:8050/api/v1/demo-readiness/reset-profiles"))
+    items.append(_http_item("UI Test Guide", "backend", "http://localhost:8050/api/v1/demo-readiness/ui-test-guide"))
+    items.append(_http_item("Smoke Report", "backend", "http://localhost:8050/api/v1/demo-readiness/smoke-report"))
     items.append(_http_item("Agent Knowledge", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
     items.append(_http_item("Deterministic Retrieval", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))
     items.append(_http_item("RAG Foundation", "backend", "http://localhost:8050/api/v1/agent-knowledge/summary"))

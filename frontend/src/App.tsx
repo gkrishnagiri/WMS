@@ -22,6 +22,7 @@ import { AgentKnowledgeArticleDetailPage, AgentKnowledgeArticlesPage, AgentKnowl
 import { AgentInvestigationDetailPage, AgentInvestigationsPage } from "./pages/AgentInvestigationPages";
 import { DemoScenarioCatalogPage, DemoScenarioRunPage, DemoScenarioRunsPage } from "./pages/DemoScenarioPages";
 import { ExecutiveDemoPage, ExecutiveGovernancePage, ExecutiveStoryboardPage, ExecutiveValuePage } from "./pages/ExecutiveDemoPages";
+import { DemoReadinessGuidePage, DemoReadinessPage, DemoReadinessShowcasePage, DemoReadinessSmokePage } from "./pages/DemoReadinessPages";
 
 export default function App() {
   return (
@@ -36,6 +37,10 @@ export default function App() {
         <Route path="/executive-demo/storyboard" element={<ExecutiveStoryboardPage />} />
         <Route path="/executive-demo/value" element={<ExecutiveValuePage />} />
         <Route path="/executive-demo/governance" element={<ExecutiveGovernancePage />} />
+        <Route path="/demo-readiness" element={<DemoReadinessPage />} />
+        <Route path="/demo-readiness/showcase" element={<DemoReadinessShowcasePage />} />
+        <Route path="/demo-readiness/ui-test-guide" element={<DemoReadinessGuidePage />} />
+        <Route path="/demo-readiness/smoke-report" element={<DemoReadinessSmokePage />} />
         <Route path="/observability-alerts" element={<ObservabilityAlertsPage />} />
         <Route path="/observability-alerts/rules" element={<ObservabilityAlertRulesPage />} />
         <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />
