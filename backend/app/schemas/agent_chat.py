@@ -177,11 +177,24 @@ class AgentActionProposalResponse(BaseModel):
     title: str
     description: str
     action_type: str
+    safe_action_code: str | None = None
     risk_level: str
     status: str
     requires_approval: bool
     approval_status: str
+    approved_by_role: str | None = None
+    approved_at: datetime | None = None
+    rejected_by_role: str | None = None
+    rejected_at: datetime | None = None
+    approval_comment: str | None = None
     execution_status: str
+    execution_mode: str = "STAGE_1_DISABLED"
+    execution_started_at: datetime | None = None
+    execution_completed_at: datetime | None = None
+    execution_error: str | None = None
+    execution_result_json: dict | None = None
+    idempotency_key: str | None = None
+    action_payload_json: dict | None = None
     created_at: datetime
     updated_at: datetime
 

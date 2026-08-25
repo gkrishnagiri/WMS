@@ -41,6 +41,8 @@ export function DemoControlPage() {
       <Grid container spacing={2} sx={{ mb: 4 }}>{summary.data.experiences.map((experience) => <Grid size={{ xs: 12, md: 6 }} key={experience.code}><Card><CardContent><Typography variant="h6">{experience.name}</Typography><Typography color="text.secondary" sx={{ mb: 1 }}>{experience.purpose}</Typography><Typography>Frontend: <MuiLink href={experience.frontend_url} target="_blank" rel="noreferrer">{experience.frontend_url}</MuiLink></Typography><Typography>Backend/BFF: <MuiLink href={experience.backend_url} target="_blank" rel="noreferrer">{experience.backend_url}</MuiLink></Typography></CardContent></Card></Grid>)}</Grid>
       <Typography variant="h5" sx={{ mb: 2 }}>Observability links</Typography>
       <Grid container spacing={2} sx={{ mb: 4 }}>{infrastructureLinks.map(([label, url]) => <Grid size={{ xs: 12, sm: 6, md: 4 }} key={label}><Card><CardContent><Typography variant="h6">{label}</Typography><MuiLink href={url} target="_blank" rel="noreferrer">{url}</MuiLink></CardContent></Card></Grid>)}</Grid>
+      <Typography variant="h5" sx={{ mb: 2 }}>Agent action capabilities</Typography>
+      <Alert severity="warning" sx={{ mb: 4 }}>Stage 2 approval-gated mode: {summary.data.capabilities.join(" · ")}. Actions are local, predefined, and require explicit human approval.</Alert>
     </>}
     {readiness.data && <>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}><Typography variant="h5">Readiness</Typography><Button variant="outlined" onClick={refresh} disabled={summary.isFetching || readiness.isFetching}>Refresh readiness</Button></Box>

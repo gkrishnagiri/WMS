@@ -42,8 +42,9 @@ import { getExperienceCode } from "../config/experience";
 function Banner() {
   return (
     <Alert severity="info" sx={{ mb: 3 }}>
-      Stage 1 read-only deterministic agent. No external LLM call is made. No
-      autonomous remediation or system-changing action is executed.
+      Stage 1 deterministic guidance with Stage 2 approval-gated local actions.
+      Approvals are explicit; no external LLM call is made by default, and no
+      autonomous remediation or external system action is enabled.
     </Alert>
   );
 }
@@ -103,8 +104,8 @@ export function AgentChatHomePage() {
     <Box>
       <Header title="Agent Support Console" />
       <Typography color="text.secondary" sx={{ mb: 3 }}>
-        Create a support case, gather existing EOS evidence, and review
-        deterministic Stage 1 guidance.
+        Create a support case, gather EOS evidence, review deterministic
+        guidance, and send safe action proposals to human approval.
       </Typography>
       {summary.data && (
         <Grid container spacing={2}>
@@ -339,7 +340,7 @@ export function AgentCaseDetailPage() {
                 <Paper key={proposal.id} sx={{ p: 1.5, my: 1 }}>
                   <Typography>{proposal.title}</Typography>
                   <Typography variant="body2">
-                    {proposal.execution_status} · approval required:{" "}
+                    {proposal.approval_status} · {proposal.execution_status} · approval required:{" "}
                     {proposal.requires_approval ? "yes" : "no"}
                   </Typography>
                 </Paper>
@@ -537,7 +538,7 @@ function SessionView({
             <Paper key={proposal.id} sx={{ p: 1.5, my: 1 }}>
               <Typography>{proposal.title}</Typography>
               <Typography variant="body2">
-                {proposal.execution_status} · approval required:{" "}
+                {proposal.approval_status} · {proposal.execution_status} · approval required:{" "}
                 {proposal.requires_approval ? "yes" : "no"}
               </Typography>
             </Paper>

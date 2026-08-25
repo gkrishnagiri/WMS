@@ -121,6 +121,7 @@ export const EXPERIENCE_CONFIG: Record<ExperienceCode, ExperienceDefinition> = {
       "/copilot",
       "/ai-config",
       "/agent-chat",
+      "/agent-investigations",
       "/agent-knowledge",
       "/agentic",
       "/health",

@@ -1135,8 +1135,9 @@ backend, Operations BFF, and Agentic BFF.
 
 The workspace computes four deterministic drafts: investigation summary, AMS
 work note, customer update, and human next-steps checklist. Drafts are not
-posted or sent anywhere and always require human review. Actions executed
-remains zero; real model use remains off by default and no external LLM,
+posted or sent anywhere and always require human review. The Stage 2 action
+foundation can execute only explicitly approved local safe handlers; real
+model use remains off by default and no external LLM,
 ServiceNow, or remediation execution is introduced.
 
 Validate with:
@@ -1146,3 +1147,39 @@ curl -sS http://localhost:8050/api/v1/agent-investigations/summary | jq .
 curl -sS http://localhost:8050/api/v1/agent-investigations/cases | jq .
 curl -sS -X POST http://localhost:8050/api/v1/agent-investigations/cases/<CASE_ID>/generate-drafts -H 'Content-Type: application/json' -d '{}' | jq .
 ```
+
+## Prompt 23 Stage 2 approval-gated agent actions
+
+Prompt 23 adds a deterministic foundation for narrowly scoped, local-only
+actions. The flow is always proposal -> explicit human approval or rejection
+-> explicit execute call -> audit result.
+
+The catalog includes local draft creation (`CREATE_AMS_WORK_NOTE_DRAFT`,
+`CREATE_CUSTOMER_UPDATE_DRAFT`, `CREATE_NEXT_STEPS_CHECKLIST`), internal case
+notes, local agent case status changes, evidence linking, proposal review,
+follow-up task drafts, and local acknowledgement of observability, monitoring,
+or operations exceptions. Drafts are never posted or sent externally, and
+alerts/exceptions are acknowledged but never resolved or closed.
+
+The action APIs are available on the Full backend, Operations BFF, and Agentic
+BFF under `/api/v1/agent-actions`. The investigation workspace exposes the
+catalog, proposal state, Dry Run, Approve, Reject, Execute Approved Action, and
+execution history controls. Every approval, rejection, dry run, and execution
+transition is recorded in the local audit trail and relevant system chat.
+
+```bash
+CASE_ID=<agent-case-record-id>
+curl -sS "http://localhost:8050/api/v1/agent-actions/proposals?case_id=${CASE_ID}" | jq .
+PROPOSAL_ID=<proposal-id>
+curl -sS -X POST "http://localhost:8050/api/v1/agent-actions/proposals/${PROPOSAL_ID}/dry-run" -H 'Content-Type: application/json' -d '{"requested_by_role":"SERVICE_ENGINEER"}' | jq .
+curl -sS -X POST "http://localhost:8050/api/v1/agent-actions/proposals/${PROPOSAL_ID}/approve" -H 'Content-Type: application/json' -d '{"approved_by_role":"SERVICE_ENGINEER","approval_comment":"Evidence reviewed.","execute_after_approval":false}' | jq .
+curl -sS -X POST "http://localhost:8050/api/v1/agent-actions/proposals/${PROPOSAL_ID}/execute" -H 'Content-Type: application/json' -d '{"requested_by_role":"SERVICE_ENGINEER"}' | jq .
+curl -sS "http://localhost:8050/api/v1/agent-actions/executions?case_id=${CASE_ID}" | jq .
+```
+
+Prompt 23 does not introduce autonomous remediation, shell commands,
+arbitrary SQL or user code execution, external API calls, ServiceNow updates,
+customer communication sends, authentication, or real-model-required
+execution. Deterministic/mock behavior remains the default and no OpenAI key
+is required. Duplicate execution attempts are safely prevented by a proposal
+idempotency key and execution audit record.

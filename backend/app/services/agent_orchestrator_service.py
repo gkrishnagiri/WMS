@@ -21,6 +21,7 @@ from app.schemas.agent_chat import AgentActionProposalResponse, AgentCaseCreate,
 from app.schemas.ai_config import RealModelRequest
 from app.services import ai_provider_gateway
 from app.services import agent_knowledge_service
+from app.services import agent_action_service
 
 STAGE_1 = "STAGE_1_READ_ONLY"
 ACTIVE_SESSION = "ACTIVE"
@@ -211,10 +212,7 @@ def _orchestrate(db: Session, session: AgentChatSession, case: AgentCase, trigge
             generation_mode = "FALLBACK_DETERMINISTIC" if real_result.fallback_used else real_result.generation_mode
     response = AgentChatMessage(message_id=_next(db, AgentChatMessage, AgentChatMessage.message_id, "AGENT-MSG-"), session_id=session.id, sender_type="AGENT", sender_role="SUPPORT_AGENT", message_text=response_text[:6000], message_format="PLAIN_TEXT", generation_mode=generation_mode, safety_status=safety_status, created_at=_now(), metadata_json=message_metadata)
     db.add(response)
-    if case.case_type in ("BATCH_FAILURE", "OBSERVABILITY_ALERT", "AMS_TICKET", "SERVICE_ENGINEER_INVESTIGATION"):
-        proposal = AgentActionProposal(proposal_id=_next(db, AgentActionProposal, AgentActionProposal.proposal_id, "AGENT-PROP-"), case_id=case.id, run_id=run.id, title="Review and document support evidence", description="A human support engineer should review the gathered evidence and document the next decision.", action_type="REVIEW_EVIDENCE", risk_level="LOW", status="PROPOSED", requires_approval=True, approval_status="PENDING", execution_status="DISABLED_IN_STAGE_1", created_at=now, updated_at=now)
-        db.add(proposal)
-        run.actions_proposed = 1
+    run.actions_proposed = agent_action_service.generate_proposals(db, case, run)
     run.orchestrator_mode = "GOVERNED_REAL_MODEL_STAGE_1" if use_real_model else "DETERMINISTIC_STAGE_1"
     run.tools_used = {"operational_evidence": len(evidence), "knowledge_query_id": retrieval.query.query_id, "knowledge_results": len(knowledge), "real_model_requested": use_real_model, "actions_executed": 0}
     run.status, run.completed_at, run.summary = "COMPLETED", _now(), f"Gathered {len(evidence)} operational and {len(knowledge)} knowledge evidence item(s) and produced read-only guidance."

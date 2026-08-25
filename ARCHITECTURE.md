@@ -588,10 +588,57 @@ and proposal events.
 The workspace also produces deterministic investigation summary, AMS work-note,
 customer-update, and next-steps drafts. These are display/copy artifacts only;
 they are not persisted to external systems, sent to customers, or applied to
-tickets. The Stage 1 banner remains authoritative: remediation execution is
-disabled, actions executed is zero, and real-model use is not enabled by
-default. Full, Operations, and Agentic BFFs expose the workspace while the
+tickets. The Stage 2 banner remains authoritative: only explicitly approved
+local safe actions can execute, remediation remains disabled, and real-model
+use is not enabled by default. Full, Operations, and Agentic BFFs expose the workspace while the
 Business, Simulation, and Observability BFFs do not.
+
+## Stage 2 approval-gated action architecture
+
+Prompt 23 separates agent guidance from action execution. The deterministic
+orchestrator creates safe catalog proposals but cannot execute them. An
+explicit engineer approval changes a proposal to `APPROVED`; only a separate
+explicit execute request can run a registered handler. Rejection is terminal.
+
+```text
+case context -> deterministic proposal
+                    |
+                    v              v
+             human approve    human reject
+                    |
+                    v
+           explicit execute request
+                    |
+        registered local safe handler
+                    |
+             execution + audit
+                    |
+          timeline and system chat
+```
+
+`agent_action_proposals` stores approval identity/timestamps, the safe action
+code, execution state, result, and an idempotency key. The
+`agent_action_executions` table records each execution attempt and result.
+`agent_action_audit_events` records approval, rejection, dry-run, execution
+start, success, and failure events used by the investigation timeline.
+
+Handlers are allowlisted and narrowly scoped: local draft generation, an
+internal local case note, allowed local agent-case statuses, evidence
+reference confirmation, and local acknowledgement of linked alerts or
+operations exceptions. Acknowledgement never resolves an alert or closes an
+exception. Draft handlers never send data. The execution service rejects
+unapproved, rejected, unknown, and previously attempted proposals before a
+handler is called.
+
+Operations BFF and Agentic BFF expose the complete `/api/v1/agent-actions`
+surface. Business, Simulation, and Observability BFFs do not expose it. The
+Full backend exposes it for the integrated demo. Demo readiness checks the
+summary endpoint without approving or executing anything.
+
+This is the explicit boundary before a future Stage 3: any autonomous
+remediation, broader tool permissions, external system integration, real
+customer sends, shell/SQL/code execution, or model-driven execution requires
+a separately governed design and is not enabled by Prompt 23.
 
 ## Deferred items
 

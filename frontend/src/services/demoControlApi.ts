@@ -13,6 +13,7 @@ export interface DemoSummary {
   mode: string;
   summary: { frontends: number; backends: number; infrastructure_components: number };
   overall_status: string;
+  capabilities: string[];
   experiences: DemoExperience[];
   observability: Record<string, string>;
 }

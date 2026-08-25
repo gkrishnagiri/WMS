@@ -16,6 +16,7 @@ from app.api.routes.observability_alerts import router as observability_alerts_r
 from app.api.routes.agent_chat import router as agent_chat_router
 from app.api.routes.agent_knowledge import router as agent_knowledge_router
 from app.api.routes.agent_investigations import router as agent_investigations_router
+from app.api.routes.agent_actions import router as agent_actions_router
 from app.api.routes.synthetic_users import router as synthetic_users_router
 from app.api.routes.system import router as system_router
 from app.api.routes.user_reports import router as user_reports_router
@@ -39,6 +40,7 @@ router.include_router(observability_alerts_router)
 router.include_router(agent_chat_router)
 router.include_router(agent_knowledge_router)
 router.include_router(agent_investigations_router)
+router.include_router(agent_actions_router)
 router.include_router(batch_router)
 router.include_router(copilot_router)
 router.include_router(demo_control_router)

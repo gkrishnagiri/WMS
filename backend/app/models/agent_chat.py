@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Uuid, func
+from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Uuid, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -145,7 +145,66 @@ class AgentActionProposal(Base):
     requires_approval: Mapped[bool] = mapped_column(nullable=False, default=True)
     approval_status: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING")
     execution_status: Mapped[str] = mapped_column(String(40), nullable=False, default="DISABLED_IN_STAGE_1")
+    approved_by_role: Mapped[Optional[str]] = mapped_column(String(80))
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    rejected_by_role: Mapped[Optional[str]] = mapped_column(String(80))
+    rejected_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    approval_comment: Mapped[Optional[str]] = mapped_column(String(2000))
+    execution_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    execution_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    execution_error: Mapped[Optional[str]] = mapped_column(String(2000))
+    execution_result_json: Mapped[Optional[dict]] = mapped_column(JSON)
+    execution_mode: Mapped[str] = mapped_column(String(40), nullable=False, default="STAGE_1_DISABLED")
+    safe_action_code: Mapped[Optional[str]] = mapped_column(String(80))
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(200), unique=True)
+    action_payload_json: Mapped[Optional[dict]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     case: Mapped[AgentCase] = relationship(back_populates="proposals")
+
+
+class AgentActionExecution(Base):
+    __tablename__ = "agent_action_executions"
+    __table_args__ = (UniqueConstraint("idempotency_key", name="uq_agent_action_execution_idempotency"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    execution_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    proposal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_action_proposals.id"), nullable=False)
+    case_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_cases.id"), nullable=False)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_orchestration_runs.id"), nullable=False)
+    safe_action_code: Mapped[str] = mapped_column(String(80), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), nullable=False)
+    requested_by_role: Mapped[str] = mapped_column(String(80), nullable=False)
+    approved_by_role: Mapped[Optional[str]] = mapped_column(String(80))
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    result_summary: Mapped[Optional[str]] = mapped_column(String(2000))
+    result_json: Mapped[Optional[dict]] = mapped_column(JSON)
+    error_message: Mapped[Optional[str]] = mapped_column(String(2000))
+    idempotency_key: Mapped[str] = mapped_column(String(200), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    proposal: Mapped[AgentActionProposal] = relationship()
+    case: Mapped[AgentCase] = relationship()
+    run: Mapped[AgentOrchestrationRun] = relationship()
+
+
+class AgentActionAuditEvent(Base):
+    __tablename__ = "agent_action_audit_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    proposal_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_action_proposals.id"), nullable=False)
+    case_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agent_cases.id"), nullable=False)
+    run_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("agent_orchestration_runs.id"))
+    event_type: Mapped[str] = mapped_column(String(60), nullable=False)
+    actor_role: Mapped[str] = mapped_column(String(80), nullable=False)
+    comment: Mapped[Optional[str]] = mapped_column(String(2000))
+    metadata_json: Mapped[Optional[dict]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    proposal: Mapped[AgentActionProposal] = relationship()
+    case: Mapped[AgentCase] = relationship()
+    run: Mapped[Optional[AgentOrchestrationRun]] = relationship()
