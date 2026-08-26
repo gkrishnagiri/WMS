@@ -1350,3 +1350,29 @@ The OpenAI catalog is extensible from Agentic or Full UI at `/ai-costing/models`
 or through `POST /api/v1/ai-costing/models`. New models are disabled by
 default. Delete archives a model from active selection while preserving
 historical usage, invocation audit, and pricing snapshots.
+
+## Prompt 30 Stage 3 autonomous remediation sandbox
+
+Prompt 30 adds an explicitly requested, local-only Stage 3 sandbox at
+`/stage3-autonomy`. It is disabled by default and is not production
+autonomous remediation. Runs are synchronous and bounded by max steps,
+duration, estimated cost, profile policy, a dry-run-first requirement, and a
+database-backed kill switch. Every run, decision, guardrail, and local action
+is audited.
+
+```bash
+python -m app.db.seed_stage3_profiles
+./scripts/stage3-autonomy-status.sh
+./scripts/stage3-autonomy-dry-run.sh <STAGE3_RUN_ID>
+```
+
+Use the UI or `POST /api/v1/stage3-autonomy/runs` with
+`acknowledge_sandbox_only=true` to create a run, then request its dry-run.
+Execution requires explicit sandbox, no-external-system, and cost
+acknowledgements, and is blocked while `AUTONOMOUS_SANDBOX_ENABLED=false` or
+the kill switch is active. The deterministic profiles allow only predefined
+local drafts, notes, checklists, evidence links, case status changes, or local
+alert/exception acknowledgement. Execution delegates to the Stage 2 action
+handler and never calls a shell, arbitrary SQL, external API, ServiceNow, or
+customer communication path. Real model use is not enabled by default and is
+never required for tests, seeds, readiness, or dry-runs.

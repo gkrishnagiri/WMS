@@ -889,3 +889,41 @@ pricing through the costing API/UI. Delete archives the configuration and
 deactivates active pricing without deleting referenced invocation, usage, or
 historical pricing records. Archived models are omitted from normal selection
 and are available only through an explicit inactive-catalog query.
+
+## Prompt 30: Stage 3 autonomous sandbox boundary
+
+Stage 3 is implemented as a local, synchronous sandbox layered on the Stage 2
+action service. `stage3_autonomous_runs` records the explicit run request and
+limits; `stage3_autonomous_steps` records each deterministic decision,
+guardrail result, selected catalog action, and execution reference; and
+`stage3_autonomous_events` records the audit timeline. A singleton
+`stage3_autonomy_controls` row provides the app-level kill switch without
+changing environment files.
+
+The flow is:
+
+```text
+explicit run request -> dry-run plan -> policy/kill-switch/budget checks
+  -> bounded synchronous steps -> Stage 2 local handler -> audit/human handback
+```
+
+Four code-governed profiles constrain the action set: dry-run only, local
+draft autonomy, local acknowledgement autonomy, and human handoff on
+uncertainty. Execution is disabled by default through
+`AUTONOMOUS_SANDBOX_ENABLED=false`, requires dry-run completion and explicit
+acknowledgements, and stops on policy mismatch, duplicate/no-op, kill switch,
+budget, duration, or missing safe context. No background polling or unbounded
+loop exists. A sandbox proposal is explicitly marked as Stage 3 and then
+delegated to `agent_action_service`; handler and idempotency logic is not
+duplicated.
+
+The Agentic and Full experiences expose the complete console. Operations and
+Simulation expose read-only status/summary (Operations also exposes dry-run),
+while Business exposes read-only status/catalog/run views and Observability
+has no Stage 3 surface. Investigation workspaces link to a dry-run console;
+guided scenarios provide optional Stage 3 presenter steps; readiness,
+executive governance, and manual UI acceptance report sandbox state without
+starting execution. The sandbox is a demonstration of a future boundary only:
+it does not remediate production, call external systems, run shell commands or
+arbitrary SQL, use ServiceNow, send customer messages, or make real model use
+the default.

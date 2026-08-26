@@ -62,6 +62,7 @@ SCENARIO_DEFINITIONS: dict[str, dict[str, Any]] = {
             ("REVIEW_DRAFTS", "Review work-note draft", "Open the action proposals and dry-run a draft action.", "Demonstrate that a draft is local and requires explicit approval.", "GENERATE_DRAFTS", "A deterministic draft preview is available."),
             ("APPROVE_SAFE_ACTION", "Approve one safe action", "Approve and, if desired, execute one predefined local action.", "Read the safety warning before using the Stage 2 controls.", "APPROVE_SAFE_ACTION", "Only the explicitly approved action may execute."),
             ("VIEW_AUDIT", "Review action audit", "Open the action audit and timeline.", "Show who approved the action and the local result.", "VIEW_AUDIT", "Approval and execution events are visible."),
+            ("STAGE3_SANDBOX_OPTIONAL", "Demonstrate Stage 3 sandbox", "Open the local Stage 3 sandbox console for an optional dry-run.", "Show that future autonomy is bounded, dry-run-first, and disabled by default.", "OPEN_LINK", "The Stage 3 console shows local-only policy boundaries."),
             ("COMPLETE_SCENARIO", "Complete storyline", "Summarize the business outcome for the audience.", "Close with the human-in-the-loop boundary.", "COMPLETE_SCENARIO", "The scenario is marked completed by the presenter."),
         ],
     },
@@ -79,6 +80,7 @@ SCENARIO_DEFINITIONS: dict[str, dict[str, Any]] = {
             ("REVIEW_KNOWLEDGE", "Review runbook knowledge", "Review retrieved knowledge and known errors.", "Explain the likely cause while keeping remediation human-controlled.", "OPEN_LINK", "Knowledge citations are visible."),
             ("APPROVE_CHECKLIST", "Approve checklist draft", "Review and approve a next-steps checklist proposal.", "Emphasize that the checklist is a local draft and not an execution command.", "APPROVE_SAFE_ACTION", "The presenter controls approval and execution."),
             ("VIEW_TIMELINE", "Review timeline", "Review evidence, approval, and action events.", "Connect the batch symptom to a traceable support outcome.", "VIEW_AUDIT", "The timeline is complete and auditable."),
+            ("STAGE3_SANDBOX_OPTIONAL", "Demonstrate Stage 3 sandbox", "Open the local Stage 3 sandbox console for an optional dry-run.", "Position Stage 3 as a bounded future capability, not production remediation.", "OPEN_LINK", "The Stage 3 console shows dry-run and kill-switch controls."),
             ("COMPLETE_SCENARIO", "Complete storyline", "Summarize the recovery plan and ownership.", "Close with the Stage 1 and Stage 2 boundaries.", "COMPLETE_SCENARIO", "The scenario is marked completed."),
         ],
     },
@@ -316,7 +318,7 @@ def start(db: Session, scenario_code: str, created_by_role: str = "DEMO_PRESENTE
     db.add(run)
     db.flush()
     for index, (code, title, description, presenter, action_type, expected) in enumerate(_definition(scenario.scenario_code)["steps"], start=1):
-        db.add(DemoScenarioStep(run_id=run.id, step_code=code, step_title=title, step_description=description, presenter_instruction=presenter, expected_result=expected, action_type=action_type, step_order=index, status="ACTIVE" if index == 1 else "PENDING", started_at=now if index == 1 else None, instructions=presenter))
+        db.add(DemoScenarioStep(run_id=run.id, step_code=code, step_title=title, step_description=description, presenter_instruction=presenter, expected_result=expected, action_type=action_type, step_order=index, status="ACTIVE" if index == 1 else "PENDING", started_at=now if index == 1 else None, instructions=presenter, target_url="/stage3-autonomy" if code == "STAGE3_SANDBOX_OPTIONAL" else None))
     db.flush()
     _event(db, run, "SCENARIO_STARTED", f"{scenario.title} started", "The presenter started a local, guided EOS storyline.", metadata={"scenario_code": scenario.scenario_code, "created_by_role": created_by_role})
     _initial_artifacts(db, run, created_by_role)

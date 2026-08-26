@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
 
-from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ai_costing_router, ams_router, batch_router, copilot_router, demo_readiness_router, demo_scenarios_router, executive_demo_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, ui_acceptance_router, user_reports_router, warehouse_router
+from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ai_costing_router, ams_router, batch_router, copilot_router, demo_readiness_router, demo_scenarios_router, executive_demo_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, stage3_autonomy_router, synthetic_users_router, ui_acceptance_router, user_reports_router, warehouse_router
 from app.api.routes.facades import agentic_router, business_router, observability_router as observability_facade_router, operations_router as operations_facade_router, simulation_router
 from app.api.routes.platform import router as platform_router
 from app.core.config import get_settings
@@ -45,6 +45,7 @@ ROUTERS = {
     "demo_readiness": demo_readiness_router,
     "ui_acceptance": ui_acceptance_router,
     "executive_demo": executive_demo_router,
+    "stage3_autonomy": stage3_autonomy_router,
 }
 
 
@@ -118,6 +119,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         application.include_router(_filtered_exact_router(ui_acceptance_router, ("/api/v1/ui-acceptance/summary", "/api/v1/ui-acceptance/suites", "/api/v1/ui-acceptance/cases", "/api/v1/ui-acceptance/cases/{case_code}", "/api/v1/ui-acceptance/runs", "/api/v1/ui-acceptance/runs/{run_id}", "/api/v1/ui-acceptance/runs/{run_id}/report", "/api/v1/ui-acceptance/runs/{run_id}/report.md", "/api/v1/ui-acceptance/coverage")))
         application.include_router(_filtered_route_methods(ai_costing_router, {"/api/v1/ai-costing/summary": {"GET"}, "/api/v1/ai-costing/models": {"GET"}, "/api/v1/ai-costing/models/{model_code}": {"GET"}, "/api/v1/ai-costing/usage": {"GET"}, "/api/v1/ai-costing/usage/by-model": {"GET"}, "/api/v1/ai-costing/usage/by-day": {"GET"}, "/api/v1/ai-costing/invocations/{invocation_id}/cost": {"GET"}, "/api/v1/ai-costing/guardrails": {"GET"}}))
         _include_group(application, "executive_demo")
+        application.include_router(_filtered_route_methods(stage3_autonomy_router, {"/api/v1/stage3-autonomy/status": {"GET"}, "/api/v1/stage3-autonomy/profiles": {"GET"}, "/api/v1/stage3-autonomy/runs": {"GET"}, "/api/v1/stage3-autonomy/summary": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}/steps": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}/events": {"GET"}}))
     elif definition.code == "operations":
         application.include_router(operations_facade_router)
         _include_group(application, "operations", ("/api/v1/operations/exceptions",))
@@ -139,6 +141,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "demo_readiness")
         _include_group(application, "ui_acceptance")
         _include_group(application, "executive_demo")
+        application.include_router(_filtered_route_methods(stage3_autonomy_router, {"/api/v1/stage3-autonomy/status": {"GET"}, "/api/v1/stage3-autonomy/profiles": {"GET"}, "/api/v1/stage3-autonomy/runs": {"GET"}, "/api/v1/stage3-autonomy/summary": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}/steps": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}/events": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}/dry-run": {"POST"}}))
     elif definition.code == "simulation":
         application.include_router(simulation_router)
         _include_group(application, "synthetic_users")
@@ -149,6 +152,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "demo_readiness")
         _include_group(application, "ui_acceptance")
         _include_group(application, "executive_demo")
+        application.include_router(_filtered_route_methods(stage3_autonomy_router, {"/api/v1/stage3-autonomy/status": {"GET"}, "/api/v1/stage3-autonomy/profiles": {"GET"}, "/api/v1/stage3-autonomy/runs": {"GET"}, "/api/v1/stage3-autonomy/summary": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}/steps": {"GET"}, "/api/v1/stage3-autonomy/runs/{run_id}/events": {"GET"}}))
         _include_group(application, "observability_stack", ("/api/v1/observability-stack/test",))
     elif definition.code == "observability":
         application.include_router(observability_facade_router)
@@ -171,6 +175,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "demo_readiness")
         _include_group(application, "ui_acceptance")
         _include_group(application, "executive_demo")
+        _include_group(application, "stage3_autonomy")
     else:
         raise ValueError(f"Unsupported BFF experience: {definition.code}")
 

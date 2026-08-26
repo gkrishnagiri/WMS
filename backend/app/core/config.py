@@ -98,6 +98,16 @@ class Settings(BaseSettings):
     real_model_max_output_tokens: int = 1200
     real_model_stage1_only: bool = True
 
+    # Stage 3 is an explicitly disabled, local-only sandbox. These settings
+    # are intentionally separate from the runtime database kill switch.
+    autonomous_sandbox_enabled: bool = False
+    autonomous_sandbox_allow_real_model: bool = False
+    autonomous_sandbox_max_steps: int = 5
+    autonomous_sandbox_max_duration_seconds: int = 120
+    autonomous_sandbox_max_estimated_cost: float = 1.0
+    autonomous_sandbox_require_dry_run_first: bool = True
+    autonomous_sandbox_kill_switch: bool = False
+
     @property
     def database_url(self) -> str:
         return (

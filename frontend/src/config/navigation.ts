@@ -67,6 +67,7 @@ export const navigation: NavigationItem[] = [
   { label: "AI Model Pricing", path: "/ai-costing/models", experiences: ["full", "agentic"] },
   { label: "AI Usage Metering", path: "/ai-costing/usage", experiences: ["full", "agentic", "operations"] },
   { label: "AI Smoke Test", path: "/ai-costing/smoke-test", experiences: ["full", "agentic"] },
+  { label: "Stage 3 Sandbox", path: "/stage3-autonomy", experiences: ["full", "operations", "agentic"] },
   { label: "Runtime Observability", path: "/observability/runtime", experiences: ["full", "observability"] },
   { label: "Runtime Traces", path: "/observability/runtime/traces", experiences: ["full", "observability"] },
   { label: "Observability Stack", path: "/observability/stack", experiences: ["full", "observability"] },

@@ -15,6 +15,7 @@ from app.models.synthetic_users import SyntheticJourney, SyntheticJourneyRun, Sy
 from app.models.user_reports import AmsUserReport
 from app.models.demo_scenario import DemoScenario, DemoScenarioRun, DemoScenarioStep, DemoScenarioArtifact, DemoScenarioEvent
 from app.models.ui_acceptance import UiTestSuite, UiTestCase, UiTestStep, UiTestRun, UiTestStepResult, UiTestRunEvent
+from app.models.stage3_autonomy import Stage3AutonomousEvent, Stage3AutonomousRun, Stage3AutonomousStep, Stage3AutonomyControl
 
 from app.models.warehouse import (
     Allocation,
@@ -115,4 +116,8 @@ __all__ = [
     "UiTestRun",
     "UiTestStepResult",
     "UiTestRunEvent",
+    "Stage3AutonomousRun",
+    "Stage3AutonomousStep",
+    "Stage3AutonomousEvent",
+    "Stage3AutonomyControl",
 ]

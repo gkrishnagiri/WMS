@@ -282,6 +282,54 @@ def execute_proposal(db: Session, proposal_id: str, request: ActionExecutionRequ
     return {"proposal": _proposal_dict(row), "execution": _execution_dict(execution), "duplicate_prevented": False}
 
 
+def execute_sandbox_action(db: Session, case: AgentCase, action_code: str, requested_by_role: str, idempotency_key: str) -> dict[str, Any]:
+    """Execute one catalog action for the Stage 3 sandbox.
+
+    Stage 3 does not duplicate handlers. It creates an explicitly marked
+    sandbox proposal, records the autonomous policy decision as the approval
+    boundary, and delegates the actual local handler/idempotency work to the
+    normal Stage 2 executor.
+    """
+    code = action_code.upper()
+    if code not in CATALOG_BY_CODE or code == "REVIEW_EVIDENCE":
+        raise AgentActionError("Stage 3 may execute only a predefined local safe action.", 400)
+    existing = db.scalar(select(AgentActionExecution).where(AgentActionExecution.idempotency_key == idempotency_key))
+    if existing is not None:
+        proposal = db.get(AgentActionProposal, existing.proposal_id)
+        return {"proposal": _proposal_dict(proposal) if proposal else None, "execution": _execution_dict(existing), "duplicate_prevented": True}
+    orchestration_run = db.scalar(select(AgentOrchestrationRun).where(AgentOrchestrationRun.case_id == case.id).order_by(AgentOrchestrationRun.started_at.desc()).limit(1))
+    if orchestration_run is None:
+        raise AgentActionError("Stage 3 requires an existing agent investigation run for local audit linkage.", 409)
+    now = _now()
+    proposal = AgentActionProposal(
+        proposal_id=_next(db, AgentActionProposal, AgentActionProposal.proposal_id, "ST3-PROP-"),
+        case_id=case.id,
+        run_id=orchestration_run.id,
+        title=f"Sandbox: {CATALOG_BY_CODE[code]['name']}",
+        description=CATALOG_BY_CODE[code]["description"],
+        action_type=code,
+        safe_action_code=code,
+        risk_level="LOW",
+        status="APPROVED",
+        requires_approval=False,
+        approval_status="APPROVED",
+        execution_status="APPROVED",
+        approved_by_role="AUTONOMOUS_SANDBOX",
+        approved_at=now,
+        approval_comment="Approved by the bounded local Stage 3 sandbox policy.",
+        execution_mode="STAGE_3_AUTONOMOUS_SANDBOX",
+        idempotency_key=idempotency_key,
+        action_payload_json={"case_id": str(case.id), "sandbox": True},
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(proposal)
+    db.flush()
+    _audit(db, proposal, "ACTION_APPROVED", requested_by_role, "Stage 3 sandbox policy approved this predefined local action.", {"sandbox": True})
+    db.flush()
+    return execute_proposal(db, proposal.proposal_id, ActionExecutionRequest(requested_by_role=requested_by_role, execution_comment="Executed inside the bounded local Stage 3 sandbox."))
+
+
 def list_executions(db: Session, case_id: UUID | None = None, status: str | None = None) -> list[dict[str, Any]]:
     statement = select(AgentActionExecution).order_by(AgentActionExecution.created_at.desc())
     if case_id:

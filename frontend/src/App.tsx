@@ -20,6 +20,7 @@ import { ObservabilityAlertEventDetailPage, ObservabilityAlertEvaluationRunsPage
 import { AgentCaseDetailPage, AgentCasesPage, AgentChatHomePage, AgentIntakePage, AgentSessionDetailPage, AgentSessionsPage } from "./pages/AgentChatPages";
 import { AgentKnowledgeArticleDetailPage, AgentKnowledgeArticlesPage, AgentKnowledgeHomePage, AgentKnowledgeSearchPage, AgentKnowledgeSourcesPage, AgentKnownErrorDetailPage, AgentKnownErrorsPage, AgentRetrievalQueriesPage, AgentRetrievalQueryDetailPage } from "./pages/AgentKnowledgePages";
 import { AgentInvestigationDetailPage, AgentInvestigationsPage } from "./pages/AgentInvestigationPages";
+import { Stage3AutonomyPage, Stage3ProfilesPage, Stage3RunDetailPage, Stage3RunsPage } from "./pages/Stage3AutonomyPages";
 import { DemoScenarioCatalogPage, DemoScenarioRunPage, DemoScenarioRunsPage } from "./pages/DemoScenarioPages";
 import { ExecutiveDemoPage, ExecutiveGovernancePage, ExecutiveStoryboardPage, ExecutiveValuePage } from "./pages/ExecutiveDemoPages";
 import { DemoReadinessGuidePage, DemoReadinessPage, DemoReadinessShowcasePage, DemoReadinessSmokePage } from "./pages/DemoReadinessPages";
@@ -52,6 +53,10 @@ export default function App() {
         <Route path="/ai-costing/models" element={<AiCostingModelsPage />} />
         <Route path="/ai-costing/usage" element={<AiCostingUsagePage />} />
         <Route path="/ai-costing/smoke-test" element={<AiCostingSmokeTestPage />} />
+        <Route path="/stage3-autonomy" element={<Stage3AutonomyPage />} />
+        <Route path="/stage3-autonomy/profiles" element={<Stage3ProfilesPage />} />
+        <Route path="/stage3-autonomy/runs" element={<Stage3RunsPage />} />
+        <Route path="/stage3-autonomy/runs/:runId" element={<Stage3RunDetailPage />} />
         <Route path="/observability-alerts" element={<ObservabilityAlertsPage />} />
         <Route path="/observability-alerts/rules" element={<ObservabilityAlertRulesPage />} />
         <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />
