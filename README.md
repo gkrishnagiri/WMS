@@ -1299,7 +1299,7 @@ authentication, or production reset tooling.
 ## Prompt 28 UI acceptance testing and evidence capture
 
 Prompt 28 adds manual, browser-first acceptance testing at `/ui-acceptance`.
-The seeded catalog contains eight suites covering the executive dashboard,
+The seeded catalog contains nine suites covering the executive dashboard,
 demo readiness, all four guided scenarios, operational handoffs, the
 investigation workspace, Stage 1 model fallback, Stage 2 approval-gated
 actions, and governance boundaries. Testers start a run, follow the stored
@@ -1325,3 +1325,28 @@ invoke models. Deterministic/mock behavior remains the default, and Prompt 28
 adds no browser automation, autonomous remediation, shell/SQL execution,
 ServiceNow integration, customer communication, authentication, or external
 service calls.
+
+## Prompt 29 AI model costing and smoke testing
+
+Prompt 29 adds an OpenAI-only governed model catalog at `/ai-costing`, editable
+local input/output pricing assumptions, per-invocation token and cost snapshots,
+usage summaries, and conservative cost guardrails. Run
+`python -m app.db.seed_ai_model_pricing` after `seed_ai_config`. Pricing is
+estimated from locally maintained assumptions and is not an OpenAI invoice.
+
+```bash
+./scripts/ai-costing-summary.sh
+./scripts/ai-costing-smoke-dry-run.sh OPENAI_GPT_5_4_MINI
+```
+
+The one-shot smoke test remains blocked unless the feature flag, provider,
+model, environment key, pricing, guardrails, explicit request, and cost
+acknowledgement all pass. API keys are never stored or entered in the UI. Real
+model calls are disabled by default and are not used by tests, seeds, readiness,
+showcase preparation, or dry-runs. Stage 1 chat remains read-only; Stage 2
+actions remain explicit, local, and approval-gated.
+
+The OpenAI catalog is extensible from Agentic or Full UI at `/ai-costing/models`,
+or through `POST /api/v1/ai-costing/models`. New models are disabled by
+default. Delete archives a model from active selection while preserving
+historical usage, invocation audit, and pricing snapshots.

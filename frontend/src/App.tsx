@@ -24,6 +24,7 @@ import { DemoScenarioCatalogPage, DemoScenarioRunPage, DemoScenarioRunsPage } fr
 import { ExecutiveDemoPage, ExecutiveGovernancePage, ExecutiveStoryboardPage, ExecutiveValuePage } from "./pages/ExecutiveDemoPages";
 import { DemoReadinessGuidePage, DemoReadinessPage, DemoReadinessShowcasePage, DemoReadinessSmokePage } from "./pages/DemoReadinessPages";
 import { UIAcceptanceDashboardPage, UIAcceptanceReportPage, UIAcceptanceRunPage, UIAcceptanceRunsPage, UIAcceptanceSuitesPage } from "./pages/UIAcceptancePages";
+import { AiCostingModelsPage, AiCostingPage, AiCostingSmokeTestPage, AiCostingUsagePage } from "./pages/AICostingPages";
 
 export default function App() {
   return (
@@ -47,6 +48,10 @@ export default function App() {
         <Route path="/ui-acceptance/runs" element={<UIAcceptanceRunsPage />} />
         <Route path="/ui-acceptance/runs/:runId/report" element={<UIAcceptanceReportPage />} />
         <Route path="/ui-acceptance/runs/:runId" element={<UIAcceptanceRunPage />} />
+        <Route path="/ai-costing" element={<AiCostingPage />} />
+        <Route path="/ai-costing/models" element={<AiCostingModelsPage />} />
+        <Route path="/ai-costing/usage" element={<AiCostingUsagePage />} />
+        <Route path="/ai-costing/smoke-test" element={<AiCostingSmokeTestPage />} />
         <Route path="/observability-alerts" element={<ObservabilityAlertsPage />} />
         <Route path="/observability-alerts/rules" element={<ObservabilityAlertRulesPage />} />
         <Route path="/observability-alerts/evaluation-runs" element={<ObservabilityAlertEvaluationRunsPage />} />

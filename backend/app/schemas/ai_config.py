@@ -240,3 +240,6 @@ class RealModelInvocationResponse(BaseModel):
     guardrail_events: list[GuardrailEventResponse] = Field(default_factory=list)
     error_message: str | None = None
     notes: list[str] = Field(default_factory=list)
+    estimated_cost: float | None = None
+    pricing_status: str | None = None
+    usage_source: str | None = None

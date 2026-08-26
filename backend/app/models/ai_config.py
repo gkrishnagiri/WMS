@@ -41,6 +41,7 @@ class AiModelConfig(TimestampMixin, Base):
     model_family: Mapped[str] = mapped_column(String(80), nullable=False)
     purpose: Mapped[str] = mapped_column(String(60), nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    catalog_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     temperature: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     top_p: Mapped[float] = mapped_column(Float, nullable=False, default=1)

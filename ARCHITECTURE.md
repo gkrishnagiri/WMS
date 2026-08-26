@@ -852,3 +852,40 @@ checks catalog/run/report availability without starting a test run. Prompt 28
 adds manual browser-first testing only: no browser automation, external test
 SaaS, real-model requirement, autonomous remediation, shell/SQL execution,
 ServiceNow integration, customer sends, or authentication.
+
+## Prompt 29: OpenAI costing and smoke-test boundary
+
+The optional OpenAI path remains behind `ai_provider_gateway`. The
+`ai_model_pricing` table stores editable, effective-dated local pricing
+assumptions; each real-provider invocation is normalized into
+`ai_model_usage_metering` with provider-reported or estimated input,
+completion, and total tokens plus a pricing snapshot. Historical costs do not
+change when future pricing is edited.
+
+The costing service checks the feature flag, provider/model governance,
+environment key presence, task allow-list, safety, input/output limits, daily
+invocation/cost limits, and single-call estimated cost. Dry-runs never invoke a
+provider. A smoke run crosses the provider boundary only after an explicit
+request and cost acknowledgement; blocked attempts use the governed gateway
+with `allow_real_model=false` where possible so the attempt remains auditable.
+OpenAI usage fields are normalized to EOS terminology.
+
+Agentic and Full expose costing, pricing, usage, and one-shot smoke controls;
+Operations receives read-only costing plus smoke controls; Business receives
+read-only catalog/summary views; Simulation and Observability receive none.
+No API key is returned or accepted by the UI. Stage 1 chat is catalog-backed
+but deterministic fallback remains the default. Prompt 29 adds no autonomous
+remediation, shell/SQL/code execution, external business-system calls,
+ServiceNow integration, customer communication, authentication, or billing.
+Estimated costs are local demo assumptions, not production measurements or
+invoices.
+
+### Dynamic model catalog amendment
+
+The governed OpenAI costing catalog is not limited to seeded examples.
+`AiModelConfig.catalog_active` separates catalog membership from governance
+`enabled`. Agentic and Full experiences can add a model with initial local
+pricing through the costing API/UI. Delete archives the configuration and
+deactivates active pricing without deleting referenced invocation, usage, or
+historical pricing records. Archived models are omitted from normal selection
+and are available only through an explicit inactive-catalog query.

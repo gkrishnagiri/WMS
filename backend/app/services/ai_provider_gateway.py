@@ -39,6 +39,7 @@ TASK_TEMPLATE_DEFAULTS = {
     "AGENT_STAGE_1_CHAT": "TPL-AGENT-STAGE-1-CHAT",
     "AGENT_INVESTIGATION_QA": "TPL-AGENT-INVESTIGATION-QA",
     "AGENT_KNOWLEDGE_GROUNDED_ANSWER": "TPL-AGENT-KNOWLEDGE-GROUNDED-ANSWER",
+    "MODEL_SMOKE_TEST": "TPL-MODEL-SMOKE-TEST",
     "CUSTOMER_FACING_ISSUE_GUIDANCE": "TPL-CUSTOMER-FACING-ISSUE-GUIDANCE",
     "SERVICE_ENGINEER_INVESTIGATION_GUIDANCE": "TPL-SERVICE-ENGINEER-INVESTIGATION-GUIDANCE",
 }
@@ -211,9 +212,10 @@ def _openai_call(settings: Settings, *, model_name: str, system_instruction: str
     output = getattr(response, "output_text", None) or ""
     usage_obj = getattr(response, "usage", None)
     usage: dict[str, int] = {}
-    for key in ("input_tokens", "output_tokens", "total_tokens"):
+    for key in ("input_tokens", "output_tokens", "total_tokens", "cached_input_tokens", "reasoning_tokens"):
         value = getattr(usage_obj, key, None) if usage_obj is not None else None
         if value is not None: usage[key] = int(value)
+    if "output_tokens" in usage: usage["completion_tokens"] = usage["output_tokens"]
     return str(output), usage, getattr(response, "id", None)
 
 
@@ -232,17 +234,24 @@ def _real_audit(db: Session, *, request: RealModelRequest, provider: AiProvider 
     input_tokens = int(usage.get("input_tokens") or max(1, ceil(len(prompt) / 4)))
     output_tokens = int(usage.get("output_tokens") or (max(1, ceil(len(output_text) / 4)) if output_text else 0))
     cost = ((input_tokens / 1000) * (model.cost_per_1k_input_tokens if model else 0)) + ((output_tokens / 1000) * (model.cost_per_1k_output_tokens if model else 0))
-    metadata = {"generation_mode": generation_mode, "fallback_used": fallback_used, "external_request_id": external_request_id, "usage": {"input_tokens": input_tokens, "output_tokens": output_tokens, "total_tokens": input_tokens + output_tokens}}
+    normalized_usage = {"input_tokens": input_tokens, "completion_tokens": output_tokens, "output_tokens": output_tokens, "total_tokens": int(usage.get("total_tokens") or input_tokens + output_tokens)}
+    for key in ("cached_input_tokens", "reasoning_tokens"):
+        if usage.get(key) is not None: normalized_usage[key] = int(usage[key])
+    metadata = {"generation_mode": generation_mode, "fallback_used": fallback_used, "external_request_id": external_request_id, "usage": normalized_usage}
     row = AiInvocationLog(invocation_number=_next_number(db, AiInvocationLog.invocation_number, f"AI-INV-{now:%Y%m%d}-"), provider_id=provider.id if provider else None, model_config_id=model.id if model else None, template_id=template.id if template else None, policy_id=policy.id if policy else None, request_source=request.request_source, request_source_id=request.request_source_id, task_type=request.task_type.upper(), status=status, input_summary=_redact(request.input_text)[:2000], prompt_rendered=_redact(prompt)[:10000], response_text=output_text, response_json=metadata, safety_status=safety_status, blocked_reason=blocked_reason, latency_ms=0, input_tokens_estimated=input_tokens, output_tokens_estimated=output_tokens, total_tokens_estimated=input_tokens + output_tokens, cost_estimated=cost, created_by=request.created_by, created_at=now, updated_at=now)
     db.add(row); db.flush()
     for rule in matched_rules or []:
         db.add(AiGuardrailEvent(invocation_id=row.id, policy_id=policy.id if policy else None, rule_id=rule.id, event_type="RULE_BLOCKED", severity=rule.severity, message=f"Rule {rule.rule_code} blocked the governed real-model request or response.", matched_text_summary="Configured safety pattern matched; raw text omitted.", created_at=_now()))
     if blocked_reason and not matched_rules and generation_mode == "REAL_MODEL_BLOCKED":
         db.add(AiGuardrailEvent(invocation_id=row.id, policy_id=policy.id if policy else None, rule_id=None, event_type="OUTPUT_BLOCKED", severity="HIGH", message=blocked_reason, matched_text_summary="Unsafe response marker detected; raw text omitted.", created_at=_now()))
-    if provider and model: _usage(db, provider, model, request.task_type.upper(), "BLOCKED" if status in ("BLOCKED", "FAILED") and safety_status == "BLOCKED" else status, input_tokens, output_tokens, cost)
+    metering = None
+    if provider and model:
+        _usage(db, provider, model, request.task_type.upper(), "BLOCKED" if status in ("BLOCKED", "FAILED") and safety_status == "BLOCKED" else status, input_tokens, output_tokens, cost)
+        from app.services import ai_model_cost_service
+        metering = ai_model_cost_service.record_usage_for_invocation(db, row, provider=provider, model=model, usage=usage)
     db.commit()
     events = db.scalars(select(AiGuardrailEvent).where(AiGuardrailEvent.invocation_id == row.id).order_by(AiGuardrailEvent.created_at, AiGuardrailEvent.id)).all()
-    return RealModelInvocationResponse(invocation_id=row.id, invocation_number=row.invocation_number, provider_code=request.provider_code, model_code=request.model_code, generation_mode=generation_mode, status=status, safety_status=safety_status, output_text=output_text, fallback_used=fallback_used, external_request_id=external_request_id, latency_ms=0, usage=metadata["usage"], guardrail_events=[ai_config_service._invocation_response(db, row).guardrail_events[i] for i in range(len(events))], error_message=error_message, notes=["API keys are read from environment only and are never stored or logged."])
+    return RealModelInvocationResponse(invocation_id=row.id, invocation_number=row.invocation_number, provider_code=request.provider_code, model_code=request.model_code, generation_mode=generation_mode, status=status, safety_status=safety_status, output_text=output_text, fallback_used=fallback_used, external_request_id=external_request_id, latency_ms=0, usage=metadata["usage"], guardrail_events=[ai_config_service._invocation_response(db, row).guardrail_events[i] for i in range(len(events))], error_message=error_message, estimated_cost=metering.estimated_total_cost if metering else None, pricing_status=("CONFIGURED" if metering and metering.pricing_snapshot_json else "MISSING_PRICING"), usage_source=metering.usage_source if metering else None, notes=["API keys are read from environment only and are never stored or logged."])
 
 
 def invoke_real_model(db: Session, request: RealModelRequest, settings: Settings | None = None) -> RealModelInvocationResponse:
@@ -256,8 +265,14 @@ def invoke_real_model(db: Session, request: RealModelRequest, settings: Settings
     status = real_model_status(db, provider_code=request.provider_code, model_code=request.model_code, settings=settings)
     if request.dry_run:
         return _real_audit(db, request=request, provider=provider, model=model, template=template, policy=policy, prompt=prompt, status="DRY_RUN", generation_mode="REAL_MODEL_DRY_RUN", safety_status=evaluation.safety_status, output_text="Dry run passed prompt and safety validation; no external provider was called.", blocked_reason=None, fallback_used=False, usage={}, external_request_id=None, error_message=None)
-    if not request.allow_real_model or not status.safe_to_invoke:
+    from app.services import ai_model_cost_service
+    guardrail_reasons = ai_model_cost_service.real_call_guardrail(db, model.model_code if model else request.model_code, prompt, request.max_output_tokens or (model.max_output_tokens if model else settings.openai_max_output_tokens), settings)
+    allowed_tasks = {part.strip().upper() for part in settings.real_model_allowed_task_types.split(",") if part.strip()}
+    if request.task_type.upper() not in allowed_tasks:
+        guardrail_reasons.append(f"Task type {request.task_type.upper()} is not allowed for real-model invocation")
+    if not request.allow_real_model or not status.safe_to_invoke or guardrail_reasons:
         reason = "Explicit real-model invocation was not allowed." if not request.allow_real_model else status.reason
+        if guardrail_reasons: reason = "; ".join(guardrail_reasons)
         return _real_audit(db, request=request, provider=provider, model=model, template=template, policy=policy, prompt=prompt, status="DISABLED", generation_mode="REAL_MODEL_DISABLED", safety_status=evaluation.safety_status, output_text=_real_fallback(), blocked_reason=reason, fallback_used=True, usage={}, external_request_id=None, error_message=reason)
     started = monotonic()
     try:

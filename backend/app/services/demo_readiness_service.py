@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.models.agent_chat import AgentActionExecution, AgentActionProposal, AgentCase, AgentOrchestrationRun
 from app.models.agent_knowledge import AgentKnowledgeArticle, AgentKnowledgeChunk, AgentKnowledgeSource, AgentKnownError
 from app.models.ai_config import AiModelConfig, AiPromptTemplate, AiProvider, AiSafetyPolicy
+from app.models.ai_costing import AiModelPricing, AiModelUsageMetering
 from app.models.ams import AmsTicket
 from app.models.batch import BatchJob, BatchRun
 from app.models.demo_scenario import DemoScenario, DemoScenarioEvent, DemoScenarioRun, DemoScenarioStep
@@ -98,6 +99,11 @@ def checks(db: Session) -> list[dict[str, Any]]:
         _check("UI Acceptance Run Tracker", "UI_ACCEPTANCE_RUN_TRACKER", _count(db, UiTestRun) >= 0 if database_ok else False, "UI acceptance run tracking tables are queryable."),
         _check("Evidence Report", "UI_ACCEPTANCE_EVIDENCE_REPORT", database_ok, "Step evidence and markdown report endpoints are registered."),
         _check("Latest UI Test Run", "UI_ACCEPTANCE_LATEST_RUN", True, "No run is required for readiness; latest run is reported when available.", critical=False),
+        _check("AI Costing Model Catalog", "AI_COSTING_MODEL_CATALOG", _count(db, AiModelPricing) > 0 if database_ok else False, "OpenAI model pricing catalog is available."),
+        _check("AI Costing Pricing Config", "AI_COSTING_PRICING_CONFIG", _count(db, AiModelPricing) > 0 if database_ok else False, "Pricing rows are present; values remain editable local assumptions."),
+        _check("AI Usage Metering", "AI_USAGE_METERING", _count(db, AiModelUsageMetering) >= 0 if database_ok else False, "Per-invocation usage metering tables are queryable."),
+        _check("Cost Guardrails", "AI_COST_GUARDRAILS", True, "Conservative single-call, daily, token, and pricing guardrails are configured."),
+        _check("Real Model Smoke Test Controls", "AI_SMOKE_TEST_CONTROLS", True, "One-shot smoke controls do not run during readiness."),
     ]
     return items
 

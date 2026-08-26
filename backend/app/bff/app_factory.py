@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
 
-from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ams_router, batch_router, copilot_router, demo_readiness_router, demo_scenarios_router, executive_demo_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, ui_acceptance_router, user_reports_router, warehouse_router
+from app.api.routes import agent_actions_router, agent_chat_router, agent_knowledge_router, agent_investigations_router, agent_model_chat_router, ai_config_router, ai_costing_router, ams_router, batch_router, copilot_router, demo_readiness_router, demo_scenarios_router, executive_demo_router, monitoring_router, observability_router, observability_alerts_router, operations_router, runtime_observability_router, observability_stack_router, synthetic_users_router, ui_acceptance_router, user_reports_router, warehouse_router
 from app.api.routes.facades import agentic_router, business_router, observability_router as observability_facade_router, operations_router as operations_facade_router, simulation_router
 from app.api.routes.platform import router as platform_router
 from app.core.config import get_settings
@@ -40,6 +40,7 @@ ROUTERS = {
     "batch": batch_router,
     "copilot": copilot_router,
     "ai_config": ai_config_router,
+    "ai_costing": ai_costing_router,
     "demo_scenarios": demo_scenarios_router,
     "demo_readiness": demo_readiness_router,
     "ui_acceptance": ui_acceptance_router,
@@ -61,6 +62,12 @@ def _filtered_exact_router(source: APIRouter, allowed_paths: Iterable[str]) -> A
     paths = set(allowed_paths)
     filtered = APIRouter()
     filtered.routes = [route for route in source.routes if isinstance(route, APIRoute) and route.path in paths]
+    return filtered
+
+
+def _filtered_route_methods(source: APIRouter, allowed: dict[str, set[str]]) -> APIRouter:
+    filtered = APIRouter()
+    filtered.routes = [route for route in source.routes if isinstance(route, APIRoute) and route.path in allowed and (not getattr(route, "methods", None) or route.methods & allowed[route.path])]
     return filtered
 
 
@@ -109,6 +116,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         application.include_router(_filtered_exact_router(demo_scenarios_router, ("/api/v1/demo-scenarios/summary", "/api/v1/demo-scenarios/catalog")))
         application.include_router(_filtered_exact_router(demo_readiness_router, ("/api/v1/demo-readiness/summary", "/api/v1/demo-readiness/checks", "/api/v1/demo-readiness/showcase", "/api/v1/demo-readiness/urls", "/api/v1/demo-readiness/ui-test-guide", "/api/v1/demo-readiness/smoke-report", "/api/v1/demo-readiness/reset-profiles")))
         application.include_router(_filtered_exact_router(ui_acceptance_router, ("/api/v1/ui-acceptance/summary", "/api/v1/ui-acceptance/suites", "/api/v1/ui-acceptance/cases", "/api/v1/ui-acceptance/cases/{case_code}", "/api/v1/ui-acceptance/runs", "/api/v1/ui-acceptance/runs/{run_id}", "/api/v1/ui-acceptance/runs/{run_id}/report", "/api/v1/ui-acceptance/runs/{run_id}/report.md", "/api/v1/ui-acceptance/coverage")))
+        application.include_router(_filtered_route_methods(ai_costing_router, {"/api/v1/ai-costing/summary": {"GET"}, "/api/v1/ai-costing/models": {"GET"}, "/api/v1/ai-costing/models/{model_code}": {"GET"}, "/api/v1/ai-costing/usage": {"GET"}, "/api/v1/ai-costing/usage/by-model": {"GET"}, "/api/v1/ai-costing/usage/by-day": {"GET"}, "/api/v1/ai-costing/invocations/{invocation_id}/cost": {"GET"}, "/api/v1/ai-costing/guardrails": {"GET"}}))
         _include_group(application, "executive_demo")
     elif definition.code == "operations":
         application.include_router(operations_facade_router)
@@ -126,6 +134,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_investigations")
         _include_group(application, "agent_actions")
         _include_group(application, "agent_model_chat")
+        application.include_router(_filtered_route_methods(ai_costing_router, {"/api/v1/ai-costing/summary": {"GET"}, "/api/v1/ai-costing/models": {"GET"}, "/api/v1/ai-costing/models/{model_code}": {"GET"}, "/api/v1/ai-costing/usage": {"GET"}, "/api/v1/ai-costing/usage/by-model": {"GET"}, "/api/v1/ai-costing/usage/by-day": {"GET"}, "/api/v1/ai-costing/invocations/{invocation_id}/cost": {"GET"}, "/api/v1/ai-costing/guardrails": {"GET"}, "/api/v1/ai-costing/smoke-test/dry-run": {"POST"}, "/api/v1/ai-costing/smoke-test/run": {"POST"}}))
         _include_group(application, "demo_scenarios")
         _include_group(application, "demo_readiness")
         _include_group(application, "ui_acceptance")
@@ -157,6 +166,7 @@ def create_bff_app(definition: ExperienceDefinition) -> FastAPI:
         _include_group(application, "agent_investigations")
         _include_group(application, "agent_actions")
         _include_group(application, "agent_model_chat")
+        _include_group(application, "ai_costing")
         _include_group(application, "demo_scenarios")
         _include_group(application, "demo_readiness")
         _include_group(application, "ui_acceptance")

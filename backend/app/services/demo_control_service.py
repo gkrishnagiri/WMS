@@ -38,7 +38,7 @@ def urls() -> dict[str, object]:
     return {
         "experiences": _experience_payload(),
         "observability": OBSERVABILITY_URLS,
-        "capabilities": ["Stage 2 Action Catalog", "Approval-Gated Actions", "Action Execution Audit", "Governed Stage 1 Model Chat", "Model Context Preview", "Model Invocation Audit", "Demo Scenario Catalog", "Guided Scenario Runs", "Scenario Artifact Linking", "Scenario Timeline", "Executive Demo Dashboard", "Value Metrics", "Executive Storyboard", "Governance Dashboard", "Commercial Model View", "Demo Readiness", "Showcase Mode", "Reset Profiles", "UI Test Guide", "Smoke Report", "UI Acceptance Catalog", "UI Acceptance Run Tracker", "Evidence Report"],
+        "capabilities": ["Stage 2 Action Catalog", "Approval-Gated Actions", "Action Execution Audit", "Governed Stage 1 Model Chat", "Model Context Preview", "Model Invocation Audit", "AI Costing Model Catalog", "AI Pricing Configuration", "AI Usage Metering", "Cost Guardrails", "One-Shot Smoke Test", "Demo Scenario Catalog", "Guided Scenario Runs", "Scenario Artifact Linking", "Scenario Timeline", "Executive Demo Dashboard", "Value Metrics", "Executive Storyboard", "Governance Dashboard", "Commercial Model View", "Demo Readiness", "Showcase Mode", "Reset Profiles", "UI Test Guide", "Smoke Report", "UI Acceptance Catalog", "UI Acceptance Run Tracker", "Evidence Report"],
         "logs_directory": "/tmp/eos-demo/logs",
         "runtime_directory": "/tmp/eos-demo",
     }
@@ -128,6 +128,10 @@ def readiness() -> DemoReadinessResponse:
     items.append(_http_item("Real Model Provider", "backend", "http://localhost:8050/api/v1/ai-config/real-model/status"))
     items.append(_http_item("OpenAI Responses Provider", "backend", "http://localhost:8050/api/v1/ai-config/real-model/status"))
     items.append(_http_item("Real Model Feature Flag", "backend", "http://localhost:8050/api/v1/ai-config/real-model/status"))
+    items.append(_http_item("AI Costing Model Catalog", "backend", "http://localhost:8050/api/v1/ai-costing/models"))
+    items.append(_http_item("AI Usage Metering", "backend", "http://localhost:8050/api/v1/ai-costing/summary"))
+    items.append(_http_item("Cost Guardrails", "backend", "http://localhost:8050/api/v1/ai-costing/guardrails"))
+    items.append(_http_item("Real Model Smoke Test Controls", "backend", "http://localhost:8050/api/v1/ai-costing/summary"))
     for item in EXPERIENCE_DEFINITIONS.values():
         items.append(_http_item(f"{item.name} frontend", "frontend", item.frontend_url))
     return DemoReadinessResponse(

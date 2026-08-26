@@ -88,11 +88,14 @@ class Settings(BaseSettings):
     openai_max_output_tokens: int = 1200
     openai_reasoning_effort: str = "low"
     openai_store_responses: bool = False
-    real_model_allowed_task_types: str = "AGENT_STAGE_1_CHAT,AGENT_INVESTIGATION_QA,AGENT_EVIDENCE_SUMMARY"
+    real_model_allowed_task_types: str = "AGENT_STAGE_1_CHAT,AGENT_INVESTIGATION_QA,AGENT_EVIDENCE_SUMMARY,MODEL_SMOKE_TEST"
     real_model_max_input_chars: int = 24000
     real_model_max_context_items: int = 40
     real_model_max_daily_invocations: int = 100
     real_model_max_daily_estimated_cost: float = 10.0
+    real_model_max_single_call_estimated_cost: float = 1.0
+    real_model_max_input_tokens: int = 32000
+    real_model_max_output_tokens: int = 1200
     real_model_stage1_only: bool = True
 
     @property

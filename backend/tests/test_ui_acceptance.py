@@ -24,12 +24,12 @@ def seeded_ui_catalog(warehouse_client):
 @pytest.mark.anyio
 async def test_ui_acceptance_catalog_seed_is_idempotent_and_summary(seeded_ui_catalog):
     summary = (await seeded_ui_catalog.get("/api/v1/ui-acceptance/summary")).json()
-    assert summary["enabled_suites"] == 8
+    assert summary["enabled_suites"] == 9
     assert summary["total_cases"] >= 8
     assert summary["total_steps"] >= 60
     assert summary["browser_automation_enabled"] is False
     suites = (await seeded_ui_catalog.get("/api/v1/ui-acceptance/suites")).json()
-    assert len(suites) == 8
+    assert len(suites) == 9
     cases = (await seeded_ui_catalog.get("/api/v1/ui-acceptance/cases")).json()
     assert "STUCK_FULFILLMENT_ORDER_FLOW" in {item["case_code"] for item in cases}
     assert "OPEN_SCENARIO_CATALOG" in {step["step_code"] for item in cases for step in item["steps"]}

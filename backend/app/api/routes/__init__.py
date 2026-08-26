@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.routes.ams import router as ams_router
 from app.api.routes.ai_config import router as ai_config_router
+from app.api.routes.ai_costing import router as ai_costing_router
 from app.api.routes.batch import router as batch_router
 from app.api.routes.copilot import router as copilot_router
 from app.api.routes.demo_control import router as demo_control_router
@@ -35,6 +36,7 @@ router.include_router(warehouse_router)
 router.include_router(operations_router)
 router.include_router(ams_router)
 router.include_router(ai_config_router)
+router.include_router(ai_costing_router)
 router.include_router(synthetic_users_router)
 router.include_router(user_reports_router)
 router.include_router(monitoring_router)
