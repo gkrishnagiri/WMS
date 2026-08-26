@@ -22,7 +22,7 @@ from app.models.user_reports import AmsUserReport
 from app.models.ui_acceptance import UiTestCase, UiTestRun, UiTestStep, UiTestSuite
 from app.models.stage3_autonomy import Stage3AutonomousEvent, Stage3AutonomousRun
 from app.models.warehouse import Warehouse
-from app.services import agent_model_chat_service, demo_scenario_service, stage3_autonomous_service
+from app.services import agent_model_chat_service, baseline_completion_service, demo_scenario_service, stage3_autonomous_service
 
 
 class DemoReadinessError(Exception):
@@ -109,6 +109,7 @@ def checks(db: Session) -> list[dict[str, Any]]:
         _check("Stage 3 Kill Switch", "STAGE3_KILL_SWITCH", not stage3_autonomous_service.status(db).get("kill_switch_enabled", False) if database_ok else False, "Global Stage 3 kill switch is clear; execution remains separately disabled by default."),
         _check("Stage 3 Profiles", "STAGE3_PROFILES", len(stage3_autonomous_service.PROFILE_DEFINITIONS) >= 4, "Deterministic bounded sandbox profiles are registered."),
         _check("Stage 3 Cost Guardrails", "STAGE3_COST_GUARDRAILS", True, "Stage 3 has max steps, duration, and estimated-cost bounds."),
+        _check("Baseline Completion Pack", "BASELINE_COMPLETION_PACK", True, "Read-only Baseline 1.0 traceability, walkthrough, and handover surfaces are registered."),
     ]
     return items
 
@@ -120,7 +121,7 @@ def summary(db: Session) -> dict[str, Any]:
     passed = sum(1 for item in items if item["healthy"])
     score = round(passed * 100 / len(items)) if items else 0
     status = "NOT_READY" if critical_failed else "READY_WITH_WARNINGS" if warnings else "READY"
-    return {"status": status, "readiness_score": score, "demo_mode": "SHOWCASE_READY" if status == "READY" else "LOCAL_DEMO", "critical_checks_passed": sum(1 for item in items if item["critical"] and item["healthy"]), "critical_checks_failed": critical_failed, "warnings": warnings, "real_model_default_enabled": False, "autonomous_remediation_enabled": False, "service_now_enabled": False, "recommended_next_action": "Open the guided demo scenarios page." if status != "NOT_READY" else "Resolve failed critical readiness checks before presenting.", "checked_at": _now()}
+    return {"status": status, "readiness_score": score, "demo_mode": "SHOWCASE_READY" if status == "READY" else "LOCAL_DEMO", "critical_checks_passed": sum(1 for item in items if item["critical"] and item["healthy"]), "critical_checks_failed": critical_failed, "warnings": warnings, "real_model_default_enabled": False, "autonomous_remediation_enabled": False, "service_now_enabled": False, "recommended_next_action": "Open the guided demo scenarios page." if status != "NOT_READY" else "Resolve failed critical readiness checks before presenting.", "checked_at": _now(), "baseline_completion": {"status": "BASELINE_READY", "version": baseline_completion_service.BASELINE_VERSION, "read_only": True}}
 
 
 def reset_profiles() -> dict[str, Any]:

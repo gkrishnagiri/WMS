@@ -927,3 +927,32 @@ starting execution. The sandbox is a demonstration of a future boundary only:
 it does not remediate production, call external systems, run shell commands or
 arbitrary SQL, use ServiceNow, send customer messages, or make real model use
 the default.
+
+## Prompt 31: Baseline completion and handover architecture
+
+The baseline completion layer is a read-only facade over the existing EOS
+capabilities. `baseline_completion_service.py` contains deterministic catalogs
+for requirements, walkthroughs, demo journeys, reset/replay instructions,
+testing, model/cost guidance, stage modes, limitations, and sign-off items. It
+performs only a bounded scenario-catalog count for the summary; it does not
+start scenarios, reset records, invoke models, approve actions, or execute
+actions.
+
+The `/api/v1/baseline-completion` routes expose this service data as JSON and
+as a generated `/handover-pack.md` response. The pack composes the baseline
+summary, local stack/UI sequence, eight walkthroughs, seven journey maps,
+requirements matrix, reset guide, testing guide, model guide, Stage 1/2/3
+guide, limitations, sign-off checklist, and future phases.
+
+Full, Business, Operations, Simulation, and Agentic BFFs expose only these
+GET routes. Observability intentionally has no baseline completion surface.
+The same five experiences expose the UI pages; Business is read-only by
+construction because no baseline mutation routes exist. Links return to
+executive value, readiness, scenarios, investigations, actions, costing,
+sandbox, and UI acceptance without duplicating their state-changing controls.
+
+Prompt 31 is the handover boundary for the initial baseline. It documents
+deterministic/mock defaults, Stage 3 as a local sandbox disabled by default,
+opt-in model/cost controls, non-production demo estimates, and future phases
+for ServiceNow, authentication, browser automation, production observability,
+external communications, billing, and production autonomy.

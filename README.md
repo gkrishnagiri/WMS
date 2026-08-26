@@ -1376,3 +1376,44 @@ alert/exception acknowledgement. Execution delegates to the Stage 2 action
 handler and never calls a shell, arbitrary SQL, external API, ServiceNow, or
 customer communication path. Real model use is not enabled by default and is
 never required for tests, seeds, readiness, or dry-runs.
+
+## Prompt 31 Baseline completion and handover
+
+Prompt 31 completes the Baseline 1.0 demo package with a read-only completion
+dashboard, requirements traceability matrix, browser-first walkthrough pack,
+demo journey map, reset/replay guide, stage-mode guide, model/cost guide,
+known-limitations register, final sign-off checklist, and generated Markdown
+handover pack.
+
+Open these routes from Full, Business, Operations, Simulation, or Agentic UI:
+
+```text
+/baseline-completion
+/baseline-completion/requirements
+/baseline-completion/walkthroughs
+/baseline-completion/handover
+/baseline-completion/limitations
+/baseline-completion/signoff
+```
+
+The same content is available under the read-only
+`/api/v1/baseline-completion` API. The handover Markdown is generated from the
+same service catalog as the JSON routes, keeping requirements, walkthroughs,
+stage boundaries, limitations, and sign-off content aligned.
+
+```bash
+./scripts/baseline-completion-summary.sh
+./scripts/baseline-handover-pack.sh
+```
+
+Use the pack after `./scripts/prepare-showcase.sh` to follow the recommended
+executive, scenario, investigation, approval, sandbox dry-run, costing, and
+UI acceptance sequence. Prompt 27 reset profiles remain the supported replay
+mechanism; this completion layer never resets data, starts runs, calls a
+model, approves actions, or executes actions.
+
+Real model calls remain off by default and Stage 3 execution remains disabled
+by default. The baseline does not add ServiceNow, authentication, browser
+automation, customer communication, shell/SQL execution, billing, or
+production autonomous remediation. Demo estimates and local pricing
+assumptions are explicitly non-production.

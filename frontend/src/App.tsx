@@ -26,6 +26,7 @@ import { ExecutiveDemoPage, ExecutiveGovernancePage, ExecutiveStoryboardPage, Ex
 import { DemoReadinessGuidePage, DemoReadinessPage, DemoReadinessShowcasePage, DemoReadinessSmokePage } from "./pages/DemoReadinessPages";
 import { UIAcceptanceDashboardPage, UIAcceptanceReportPage, UIAcceptanceRunPage, UIAcceptanceRunsPage, UIAcceptanceSuitesPage } from "./pages/UIAcceptancePages";
 import { AiCostingModelsPage, AiCostingPage, AiCostingSmokeTestPage, AiCostingUsagePage } from "./pages/AICostingPages";
+import { BaselineCompletionPage, BaselineHandoverPage, BaselineLimitationsPage, BaselineRequirementsPage, BaselineSignoffPage, BaselineWalkthroughsPage } from "./pages/BaselineCompletionPages";
 
 export default function App() {
   return (
@@ -53,6 +54,12 @@ export default function App() {
         <Route path="/ai-costing/models" element={<AiCostingModelsPage />} />
         <Route path="/ai-costing/usage" element={<AiCostingUsagePage />} />
         <Route path="/ai-costing/smoke-test" element={<AiCostingSmokeTestPage />} />
+        <Route path="/baseline-completion" element={<BaselineCompletionPage />} />
+        <Route path="/baseline-completion/requirements" element={<BaselineRequirementsPage />} />
+        <Route path="/baseline-completion/walkthroughs" element={<BaselineWalkthroughsPage />} />
+        <Route path="/baseline-completion/handover" element={<BaselineHandoverPage />} />
+        <Route path="/baseline-completion/limitations" element={<BaselineLimitationsPage />} />
+        <Route path="/baseline-completion/signoff" element={<BaselineSignoffPage />} />
         <Route path="/stage3-autonomy" element={<Stage3AutonomyPage />} />
         <Route path="/stage3-autonomy/profiles" element={<Stage3ProfilesPage />} />
         <Route path="/stage3-autonomy/runs" element={<Stage3RunsPage />} />
